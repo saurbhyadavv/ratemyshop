@@ -1,0 +1,179 @@
+.qrOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.qrModal {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg, #FFFFFF);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  font-family: 'Outfit', sans-serif;
+}
+
+/* Madhubani-inspired decorative top border */
+.qrModal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(
+    90deg,
+    #FF6B2B 0%,
+    #C62828 20%,
+    #F9A825 40%,
+    #00897B 60%,
+    #1565C0 80%,
+    #FF6B2B 100%
+  );
+  z-index: 2;
+}
+
+.qrModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 12px;
+}
+
+.qrTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text, #1A1A2E);
+}
+
+.qrCloseBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: #F1F5F9;
+  color: var(--text-light, #64748B);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.qrCloseBtn:hover {
+  background: #E2E8F0;
+  color: var(--text, #1A1A2E);
+}
+
+.qrScannerBody {
+  padding: 0 24px 24px;
+}
+
+/* Scanner container with Madhubani-inspired frame */
+.qrScannerFrame {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 3px solid transparent;
+  background-image:
+    linear-gradient(var(--bg, #fff), var(--bg, #fff)),
+    linear-gradient(135deg, #FF6B2B, #C62828, #F9A825, #00897B, #1565C0);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+/* Corner accents — Madhubani motif feel */
+.qrScannerFrame::before,
+.qrScannerFrame::after {
+  content: '';
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.qrScannerFrame::before {
+  top: 8px;
+  left: 8px;
+  border-top: 3px solid #FF6B2B;
+  border-left: 3px solid #FF6B2B;
+  border-radius: 4px 0 0 0;
+}
+
+.qrScannerFrame::after {
+  top: 8px;
+  right: 8px;
+  border-top: 3px solid #C62828;
+  border-right: 3px solid #C62828;
+  border-radius: 0 4px 0 0;
+}
+
+.qrReaderContainer {
+  width: 100%;
+  min-height: 280px;
+  background: #000;
+}
+
+/* Override html5-qrcode default styles */
+.qrReaderContainer #qr-reader {
+  border: none !important;
+  width: 100% !important;
+}
+
+.qrReaderContainer #qr-reader video {
+  border-radius: 12px;
+}
+
+.qrHint {
+  text-align: center;
+  padding: 16px;
+  font-size: 13px;
+  color: var(--text-light, #64748B);
+  line-height: 1.5;
+}
+
+.qrError {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  padding: 32px 24px;
+  text-align: center;
+  gap: 12px;
+}
+
+.qrErrorIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #FEF2F2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--deep-red, #C62828);
+  font-size: 22px;
+}
+
+.qrErrorTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text, #1A1A2E);
+}
+
+.qrErrorMsg {
+  font-size: 14px;
+  color: var(--text-light, #64748B);
+  max-width: 280px;
+  line-height: 1.6;
+}

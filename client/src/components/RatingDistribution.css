@@ -1,0 +1,83 @@
+.ratingDistribution {
+  font-family: 'Outfit', sans-serif;
+}
+
+.overallRating {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--card-border, #E2E8F0);
+}
+
+.overallNumber {
+  font-size: 52px;
+  font-weight: 700;
+  color: var(--text, #1A1A2E);
+  line-height: 1;
+  letter-spacing: -1px;
+}
+
+.overallMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.overallStars {
+  display: flex;
+  align-items: center;
+}
+
+.totalReviews {
+  font-size: 13px;
+  color: var(--text-light, #64748B);
+  font-weight: 400;
+}
+
+.barList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.barRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.barLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-light, #64748B);
+  white-space: nowrap;
+  min-width: 46px;
+  text-align: right;
+}
+
+.barTrack {
+  flex: 1;
+  height: 10px;
+  background: #F1F5F9;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--saffron, #FF6B2B), var(--gold, #F9A825));
+  min-width: 0;
+  transform-origin: left center;
+}
+
+.barPercent {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text, #1A1A2E);
+  min-width: 38px;
+  text-align: right;
+}

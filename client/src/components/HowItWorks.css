@@ -1,0 +1,132 @@
+/* ── How It Works ──────────────────────────────────── */
+.hiw {
+  --saffron: #FF6B2B;
+  --deep-red: #C62828;
+  --gold: #F9A825;
+  --teal: #00897B;
+
+  background: #FAFBFC;
+  padding: 80px 24px;
+}
+
+.hiw__inner {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.hiw__header {
+  text-align: center;
+  margin-bottom: 56px;
+}
+
+.hiw__title {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  color: #1a1a2e;
+  margin: 0 0 12px;
+}
+
+.hiw__underline {
+  display: block;
+  margin: 0 auto;
+}
+
+/* Steps row */
+.hiw__steps {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  position: relative;
+}
+
+/* Individual card */
+.hiw__card {
+  flex: 1;
+  text-align: center;
+  padding: 32px 20px;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+/* Icon container */
+.hiw__icon-wrap {
+  position: relative;
+  display: inline-flex;
+  margin-bottom: 20px;
+}
+
+.hiw__icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--saffron), var(--gold));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.hiw__badge {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--deep-red);
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+}
+
+.hiw__card-title {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #1a1a2e;
+  margin: 0 0 8px;
+}
+
+.hiw__card-desc {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem;
+  color: #777;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Connector arrow between cards */
+.hiw__connector {
+  position: absolute;
+  right: -32px;
+  top: 52px;
+  z-index: 2;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .hiw {
+    padding: 56px 16px;
+  }
+
+  .hiw__steps {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .hiw__connector {
+    display: none;
+  }
+
+  .hiw__card {
+    padding: 24px 16px;
+  }
+}

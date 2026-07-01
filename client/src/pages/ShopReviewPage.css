@@ -1,0 +1,893 @@
+/* ============================================
+   ShopReviewPage — Madhubani-inspired Styling
+   ============================================ */
+
+.shop-review-page {
+  min-height: 100vh;
+  background: #fff;
+  padding-bottom: 4rem;
+}
+
+/* ---------- Back Navigation ---------- */
+
+.back-nav {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 0;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #00897B;
+  text-decoration: none;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  transition: all 0.25s ease;
+  background: transparent;
+}
+
+.back-link:hover {
+  background: rgba(0, 137, 123, 0.08);
+  color: #00695C;
+}
+
+.back-link svg {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.25s ease;
+}
+
+.back-link:hover svg {
+  transform: translateX(-3px);
+}
+
+/* ---------- Shop Header ---------- */
+
+.shop-header {
+  max-width: 1100px;
+  margin: 1.5rem auto 0;
+  padding: 0 1.5rem;
+}
+
+.shop-header-card {
+  background: linear-gradient(135deg, #fff 0%, #FFF8F0 100%);
+  border-radius: 20px;
+  padding: 0;
+  border: 2px solid #FFE0CC;
+  position: relative;
+  overflow: hidden;
+}
+
+.shop-header-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #FF6B2B, #C62828, #F9A825, #00897B, #1565C0);
+  z-index: 2;
+}
+
+/* Shop image banner */
+.shop-image-banner {
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  position: relative;
+}
+
+.shop-image-banner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.shop-image-banner::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(transparent, rgba(255, 248, 240, 0.9));
+  pointer-events: none;
+}
+
+.shop-header-content {
+  padding: 1.5rem 2.5rem 2.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+
+/* Madhubani corner decorations */
+.shop-header-card::after {
+  content: '';
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 80px;
+  height: 80px;
+  background:
+    radial-gradient(circle at 50% 50%, transparent 20px, #FF6B2B 20px, #FF6B2B 22px, transparent 22px),
+    radial-gradient(circle at 50% 50%, transparent 30px, #F9A825 30px, #F9A825 32px, transparent 32px),
+    radial-gradient(circle at 50% 50%, transparent 38px, #C62828 38px, #C62828 39px, transparent 39px);
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+
+
+.shop-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #FF6B2B, #C62828);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Outfit', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.shop-info {
+  flex: 1;
+  min-width: 200px;
+}
+
+.shop-name {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 0.25rem;
+}
+
+.shop-category {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0 0 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.shop-upi-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem;
+  background: rgba(21, 101, 192, 0.08);
+  border: 1px solid rgba(21, 101, 192, 0.2);
+  border-radius: 100px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  color: #1565C0;
+  font-weight: 500;
+  margin-top: 0.25rem;
+}
+
+.shop-upi-badge svg {
+  width: 14px;
+  height: 14px;
+}
+
+.shop-rating-summary {
+  text-align: center;
+  flex-shrink: 0;
+  min-width: 140px;
+}
+
+.rating-big-number {
+  font-family: 'Outfit', sans-serif;
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: #1a1a2e;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.rating-stars-row {
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+  margin-bottom: 0.35rem;
+}
+
+.rating-stars-row svg {
+  width: 20px;
+  height: 20px;
+}
+
+.rating-count {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  color: #888;
+}
+
+/* ---------- Content Grid ---------- */
+
+.shop-content {
+  max-width: 1100px;
+  margin: 2rem auto 0;
+  padding: 0 1.5rem;
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .shop-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Rating Distribution Sidebar ---------- */
+
+.rating-distribution-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.75rem;
+  border: 1px solid #eee;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  position: sticky;
+  top: 100px;
+}
+
+.rating-dist-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 1.25rem;
+}
+
+.rating-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.rating-bar-label {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #555;
+  min-width: 36px;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.rating-bar-label svg {
+  width: 12px;
+  height: 12px;
+  color: #F9A825;
+}
+
+.rating-bar-track {
+  flex: 1;
+  height: 10px;
+  background: #f0f0f0;
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.rating-bar-fill {
+  height: 100%;
+  border-radius: 100px;
+  transition: width 1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.rating-bar-fill[data-rating="5"] { background: #00897B; }
+.rating-bar-fill[data-rating="4"] { background: #43A047; }
+.rating-bar-fill[data-rating="3"] { background: #F9A825; }
+.rating-bar-fill[data-rating="2"] { background: #FF6B2B; }
+.rating-bar-fill[data-rating="1"] { background: #C62828; }
+
+.rating-bar-count {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem;
+  color: #999;
+  min-width: 20px;
+  text-align: right;
+}
+
+/* ---------- Reviews Section ---------- */
+
+.reviews-section {
+  min-width: 0;
+}
+
+.reviews-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.reviews-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+.reviews-sort {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  color: #666;
+  padding: 0.4rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  outline: none;
+}
+
+.reviews-sort:focus {
+  border-color: #00897B;
+}
+
+/* ---------- Review Card ---------- */
+
+.review-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  border: 1px solid #eee;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.03);
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.review-card:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07);
+  transform: translateY(-1px);
+}
+
+.review-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.review-author-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.review-author-info {
+  flex: 1;
+}
+
+.review-author-name {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+.review-date {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.78rem;
+  color: #999;
+  margin: 0;
+}
+
+.review-stars {
+  display: flex;
+  gap: 2px;
+}
+
+.review-stars svg {
+  width: 16px;
+  height: 16px;
+}
+
+.review-text {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.92rem;
+  color: #444;
+  line-height: 1.65;
+  margin: 0 0 0.75rem;
+}
+
+.review-helpful {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem;
+  color: #888;
+  padding: 0.3rem 0.75rem;
+  border-radius: 100px;
+  border: 1px solid #eee;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.review-helpful:hover {
+  background: rgba(0, 137, 123, 0.06);
+  border-color: #00897B;
+  color: #00897B;
+}
+
+.review-helpful svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ---------- Add Review Form ---------- */
+
+.add-review-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 2rem;
+  margin-top: 2rem;
+  position: relative;
+  overflow: hidden;
+  border: 2px solid transparent;
+  background-image:
+    linear-gradient(#fff, #fff),
+    linear-gradient(135deg, #FF6B2B, #C62828, #F9A825, #00897B);
+  background-origin: padding-box, border-box;
+  background-clip: padding-box, border-box;
+}
+
+.add-review-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0.03;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 10% 10%, #C62828 1px, transparent 1px),
+    radial-gradient(circle at 90% 15%, #FF6B2B 1px, transparent 1px),
+    radial-gradient(circle at 50% 5%, #F9A825 1px, transparent 1px),
+    radial-gradient(circle at 20% 90%, #00897B 1px, transparent 1px),
+    radial-gradient(circle at 80% 85%, #1565C0 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+.add-review-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 0.3rem;
+}
+
+.add-review-subtitle {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.88rem;
+  color: #888;
+  margin: 0 0 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-label {
+  display: block;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 0.5rem;
+}
+
+.star-rating-input {
+  display: flex;
+  gap: 6px;
+}
+
+.star-rating-input button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  transition: transform 0.15s ease;
+}
+
+.star-rating-input button:hover {
+  transform: scale(1.2);
+}
+
+.star-rating-input button svg {
+  width: 32px;
+  height: 32px;
+  transition: color 0.15s ease;
+}
+
+.review-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 1rem;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 12px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.92rem;
+  color: #333;
+  line-height: 1.6;
+  resize: vertical;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  outline: none;
+  background: #FAFAFA;
+  box-sizing: border-box;
+}
+
+.review-textarea:focus {
+  border-color: #00897B;
+  box-shadow: 0 0 0 3px rgba(0, 137, 123, 0.1);
+  background: #fff;
+}
+
+.review-textarea::placeholder {
+  color: #bbb;
+}
+
+.location-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.location-detect-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  background: rgba(0, 137, 123, 0.08);
+  color: #00897B;
+  border: 1.5px solid rgba(0, 137, 123, 0.25);
+  border-radius: 10px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.location-detect-btn:hover:not(:disabled) {
+  background: rgba(0, 137, 123, 0.14);
+  border-color: #00897B;
+  transform: translateY(-1px);
+}
+
+.location-detect-btn:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.location-detect-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+.location-input {
+  flex: 1;
+  min-width: 180px;
+  padding: 0.65rem 1rem;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.88rem;
+  color: #333;
+  outline: none;
+  background: #FAFAFA;
+  transition: border-color 0.25s ease;
+  box-sizing: border-box;
+}
+
+.location-input:focus {
+  border-color: #00897B;
+  background: #fff;
+}
+
+.submit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 2.25rem;
+  background: linear-gradient(135deg, #FF6B2B, #C62828);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 107, 43, 0.3);
+  margin-top: 0.5rem;
+}
+
+.submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(255, 107, 43, 0.4);
+}
+
+.submit-btn:active {
+  transform: translateY(0);
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.submit-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ---------- Success Toast ---------- */
+
+.success-toast {
+  position: fixed;
+  top: 2rem;
+  right: 2rem;
+  background: #fff;
+  border-radius: 14px;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  box-shadow: 0 8px 30px rgba(0, 137, 123, 0.2);
+  border-left: 4px solid #00897B;
+  z-index: 1000;
+  font-family: 'Outfit', sans-serif;
+}
+
+.success-toast-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(0, 137, 123, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #00897B;
+  flex-shrink: 0;
+}
+
+.success-toast-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.success-toast-text strong {
+  display: block;
+  font-size: 0.92rem;
+  color: #1a1a2e;
+  margin-bottom: 2px;
+}
+
+.success-toast-text span {
+  font-size: 0.82rem;
+  color: #888;
+}
+
+/* ---------- Empty State (No Reviews) ---------- */
+
+.shop-content--empty {
+  grid-template-columns: 1fr;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: linear-gradient(135deg, #FFFCF9 0%, #FFF8F0 50%, #F8FFFE 100%);
+  border-radius: 20px;
+  border: 2px solid #FFE0CC;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Madhubani top accent bar */
+.empty-state::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #FF6B2B, #F9A825, #C62828, #00897B, #1565C0);
+}
+
+/* Subtle dot pattern overlay */
+.empty-state::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.025;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle, #FF6B2B 1px, transparent 1px),
+    radial-gradient(circle, #00897B 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: 0 0, 20px 20px;
+}
+
+.empty-state__illustration {
+  margin-bottom: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.empty-state__title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin: 0 0 0.6rem;
+  position: relative;
+  z-index: 1;
+}
+
+.empty-state__subtitle {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  color: #666;
+  line-height: 1.7;
+  margin: 0 auto 2rem;
+  max-width: 420px;
+  position: relative;
+  z-index: 1;
+}
+
+.empty-state__features {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
+}
+
+.empty-state__feature {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #fff;
+  border-radius: 100px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  color: #555;
+  font-weight: 500;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+  border: 1px solid #f0ebe4;
+}
+
+.empty-state__feature-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.empty-state__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.9rem 2.5rem;
+  background: linear-gradient(135deg, #FF6B2B, #C62828);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(255, 107, 43, 0.3);
+  position: relative;
+  z-index: 1;
+}
+
+.empty-state__cta svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 600px) {
+  .shop-image-banner {
+    height: 150px;
+  }
+
+  .shop-header-content {
+    padding: 1rem 1.5rem 1.5rem;
+  }
+
+  .shop-header-card {
+    border-radius: 16px;
+  }
+
+  .location-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .location-detect-btn {
+    justify-content: center;
+  }
+
+  .shop-header-content {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .shop-rating-summary {
+    width: 100%;
+  }
+
+  .shop-content {
+    padding: 0 1rem;
+  }
+
+  .add-review-card {
+    padding: 1.5rem;
+  }
+
+  .rating-big-number {
+    font-size: 2.75rem;
+  }
+
+  .success-toast {
+    top: auto;
+    bottom: 1.5rem;
+    right: 1rem;
+    left: 1rem;
+  }
+}

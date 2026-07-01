@@ -1,0 +1,135 @@
+/* ── Footer ────────────────────────────────────────── */
+.footer {
+  --saffron: #FF6B2B;
+  --deep-red: #C62828;
+  --gold: #F9A825;
+
+  background: #1A1A2E;
+  color: #ccc;
+  margin-top: auto;
+}
+
+.footer__madhubani-border {
+  width: 100%;
+  background: #1A1A2E;
+  line-height: 0;
+}
+
+.footer__madhubani-border svg {
+  display: block;
+}
+
+.footer__body {
+  padding: 48px 24px 32px;
+}
+
+.footer__inner {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+/* Columns */
+.footer__col {
+  flex: 1;
+}
+
+.footer__col--brand {
+  max-width: 280px;
+}
+
+.footer__col--right {
+  text-align: right;
+}
+
+.footer__logo {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 1.3rem;
+  background: linear-gradient(135deg, var(--saffron), var(--gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
+.footer__tagline {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.88rem;
+  color: #999;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.footer__col-title {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #eee;
+  margin: 0 0 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.footer__links-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.footer__links-list a {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.88rem;
+  color: #999;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer__links-list a:hover {
+  color: var(--gold);
+}
+
+.footer__made-in {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  color: #bbb;
+  margin: 0;
+}
+
+/* Bottom bar */
+.footer__bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 16px 24px;
+  text-align: center;
+}
+
+.footer__bottom p {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.82rem;
+  color: #666;
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .footer__inner {
+    flex-direction: column;
+    gap: 24px;
+    text-align: center;
+  }
+
+  .footer__col--brand {
+    max-width: 100%;
+  }
+
+  .footer__col--right {
+    text-align: center;
+  }
+}
