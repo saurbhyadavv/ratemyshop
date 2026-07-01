@@ -4,6 +4,10 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import LandingPage from './pages/LandingPage';
 import ShopReviewPage from './pages/ShopReviewPage';
+import AboutPage from './pages/AboutPage';
+import BlogPage from './pages/BlogPage';
+import BlogPostPage from './pages/BlogPostPage';
+import FAQPage from './pages/FAQPage';
 import './index.css';
 
 function AnimatedRoutes() {
@@ -13,6 +17,10 @@ function AnimatedRoutes() {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<LandingPage />} />
         <Route path="/shop/:upiId" element={<ShopReviewPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/blog" element={<BlogPage />} />
+        <Route path="/blog/:id" element={<BlogPostPage />} />
+        <Route path="/faq" element={<FAQPage />} />
       </Routes>
     </AnimatePresence>
   );

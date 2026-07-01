@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import './Footer.css';
 
 /* ── Madhubani Footer Border ──────────────────────── */
@@ -75,10 +76,19 @@ function Footer() {
             <h4 className="footer__col-title">Quick Links</h4>
             <ul className="footer__links-list">
               <li>
-                <a href="#how-it-works">How It Works</a>
+                <a href="/#how-it-works">How It Works</a>
               </li>
               <li>
-                <a href="#features">Features</a>
+                <a href="/#features">Features</a>
+              </li>
+              <li>
+                <Link to="/about">About</Link>
+              </li>
+              <li>
+                <Link to="/blog">Blog</Link>
+              </li>
+              <li>
+                <Link to="/faq">FAQ</Link>
               </li>
             </ul>
           </div>
@@ -93,7 +103,7 @@ function Footer() {
       </div>
 
       <div className="footer__bottom">
-        <p>© 2025 ratemyshop.in</p>
+        <p>© 2025-2026 ratemyshop.in</p>
       </div>
     </footer>
   );

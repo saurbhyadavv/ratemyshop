@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { ThumbsUp } from 'lucide-react';
 import StarRating from './StarRating';
@@ -31,12 +31,21 @@ function formatDate(dateStr) {
   }
 }
 
-export default function ReviewCard({ review }) {
-  const { author, rating, date, text, helpful } = review;
+export default function ReviewCard({ review, onHelpful }) {
+  const { id, author, rating, date, text, helpful } = review;
+  const [voted, setVoted] = useState(false);
+  const [localHelpful, setLocalHelpful] = useState(helpful || 0);
 
   const avatarBg = useMemo(() => getAvatarColor(author || ''), [author]);
   const initial = (author || '?').charAt(0).toUpperCase();
   const formattedDate = useMemo(() => formatDate(date), [date]);
+
+  const handleHelpfulClick = () => {
+    if (voted) return;
+    setVoted(true);
+    setLocalHelpful((prev) => prev + 1);
+    if (onHelpful) onHelpful(id);
+  };
 
   return (
     <motion.div
@@ -65,13 +74,19 @@ export default function ReviewCard({ review }) {
       <p className="reviewText">{text}</p>
 
       <div className="reviewFooter">
-        <button className="helpfulBtn" type="button">
+        <motion.button
+          className={`helpfulBtn ${voted ? 'helpfulBtn--active' : ''}`}
+          type="button"
+          onClick={handleHelpfulClick}
+          disabled={voted}
+          whileTap={!voted ? { scale: 0.9 } : {}}
+        >
           <ThumbsUp />
-          Helpful
-        </button>
-        {helpful > 0 && (
+          {voted ? 'Thanked!' : 'Helpful'}
+        </motion.button>
+        {localHelpful > 0 && (
           <span className="helpfulCount">
-            {helpful} {helpful === 1 ? 'person' : 'people'} found this helpful
+            {localHelpful} {localHelpful === 1 ? 'person' : 'people'} found this helpful
           </span>
         )}
       </div>

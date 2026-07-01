@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './Navbar.css';
 
 function Navbar() {
@@ -13,16 +14,35 @@ function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleNavClick = (e, id) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleNavClick = (e, path, id) => {
     e.preventDefault();
     setMobileOpen(false);
-    const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
+    
+    if (id) {
+      if (location.pathname !== '/') {
+        navigate('/');
+        setTimeout(() => {
+          const el = document.getElementById(id);
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      } else {
+        const el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      navigate(path);
+    }
   };
 
   const navLinks = [
     { label: 'How It Works', id: 'how-it-works' },
     { label: 'Features', id: 'features' },
+    { label: 'About', path: '/about' },
+    { label: 'Blog', path: '/blog' },
+    { label: 'FAQ', path: '/faq' },
   ];
 
   return (
@@ -33,7 +53,7 @@ function Navbar() {
       transition={{ duration: 0.5, ease: 'easeOut' }}
     >
       <div className="navbar__inner">
-        <a href="/" className="navbar__logo">
+        <Link to="/" className="navbar__logo">
           {/* Madhubani-inspired lotus motif */}
           <svg
             className="navbar__motif"
@@ -50,13 +70,13 @@ function Navbar() {
             <circle cx="14" cy="14" r="1.2" fill="#C62828" />
           </svg>
           <span className="navbar__logo-text">RateMyShop</span>
-        </a>
+        </Link>
 
         {/* Desktop nav */}
         <ul className="navbar__links">
-          {navLinks.map((link) => (
-            <li key={link.id}>
-              <a href={`#${link.id}`} onClick={(e) => handleNavClick(e, link.id)}>
+          {navLinks.map((link, index) => (
+            <li key={index}>
+              <a href={link.path || `#${link.id}`} onClick={(e) => handleNavClick(e, link.path, link.id)}>
                 {link.label}
               </a>
             </li>
@@ -84,9 +104,9 @@ function Navbar() {
             transition={{ duration: 0.25 }}
           >
             <ul>
-              {navLinks.map((link) => (
-                <li key={link.id}>
-                  <a href={`#${link.id}`} onClick={(e) => handleNavClick(e, link.id)}>
+              {navLinks.map((link, index) => (
+                <li key={index}>
+                  <a href={link.path || `#${link.id}`} onClick={(e) => handleNavClick(e, link.path, link.id)}>
                     {link.label}
                   </a>
                 </li>

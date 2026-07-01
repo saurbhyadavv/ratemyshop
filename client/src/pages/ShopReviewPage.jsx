@@ -118,7 +118,7 @@ function InlineStars({ rating, size = 16 }) {
 export default function ShopReviewPage() {
   const { upiId } = useParams();
   const navigate = useNavigate();
-  const decodedUpiId = decodeURIComponent(upiId);
+  const decodedUpiId = decodeURIComponent(upiId).toLowerCase();
   const shopName = getShopName(upiId);
 
   const [reviews, setReviews] = useState([]);
@@ -227,6 +227,25 @@ export default function ShopReviewPage() {
   }, [reviews]);
 
   const maxCount = useMemo(() => Math.max(...Object.values(ratingCounts), 1), [ratingCounts]);
+
+  /* Helpful vote handler */
+  const handleHelpful = useCallback(async (reviewId) => {
+    try {
+      // Get current helpful count first, then increment
+      const { data: current } = await supabase
+        .from('reviews')
+        .select('helpful')
+        .eq('id', reviewId)
+        .single();
+
+      await supabase
+        .from('reviews')
+        .update({ helpful: (current?.helpful || 0) + 1 })
+        .eq('id', reviewId);
+    } catch (err) {
+      console.error('Error updating helpful count:', err);
+    }
+  }, []);
 
   const handleSubmitReview = async () => {
     if (newRating === 0 || newReviewText.trim().length < 3) return;
@@ -418,7 +437,7 @@ export default function ShopReviewPage() {
             </div>
           ) : sortedReviews.length > 0 ? (
             sortedReviews.map((review) => (
-              <ReviewCard key={review.id} review={review} />
+              <ReviewCard key={review.id} review={review} onHelpful={handleHelpful} />
             ))
           ) : (
             <motion.div

@@ -152,3 +152,14 @@
   color: var(--text-light, #64748B);
   font-weight: 500;
 }
+
+.helpfulBtn--active {
+  border-color: var(--teal, #00897B);
+  color: var(--teal, #00897B);
+  background: rgba(0, 137, 123, 0.08);
+  cursor: default;
+}
+
+.helpfulBtn--active svg {
+  fill: var(--teal, #00897B);
+}

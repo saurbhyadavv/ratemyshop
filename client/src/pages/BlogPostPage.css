@@ -1,0 +1,101 @@
+.blog-post-page {
+  min-height: 100vh;
+  padding: 60px 24px 100px;
+  background-color: var(--bg, #FFFFFF);
+  display: flex;
+  justify-content: center;
+}
+
+.blog-post-container {
+  max-width: 800px;
+  width: 100%;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-light, #64748B);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  margin-bottom: 40px;
+  transition: color 0.2s;
+}
+
+.back-link:hover {
+  color: var(--saffron, #FF6B2B);
+}
+
+.blog-post-article {
+  background: var(--card-bg, #FFFFFF);
+  border: 1px solid var(--card-border, #E2E8F0);
+  border-radius: 20px;
+  padding: 48px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle Madhubani top border */
+.blog-post-article::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, 
+    var(--saffron) 0%, 
+    var(--gold) 33%, 
+    var(--teal) 66%, 
+    var(--royal-blue) 100%
+  );
+}
+
+.blog-post-header {
+  margin-bottom: 40px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid var(--card-border, #E2E8F0);
+}
+
+.blog-post-title {
+  font-size: clamp(2rem, 4vw, 3rem);
+  color: var(--text, #1A1A2E);
+  line-height: 1.2;
+  margin: 24px 0;
+  font-weight: 800;
+}
+
+.blog-post-body {
+  font-size: 1.15rem;
+  line-height: 1.8;
+  color: var(--text, #1A1A2E);
+}
+
+.blog-post-body p {
+  margin-bottom: 24px;
+}
+
+.blog-post-body ul {
+  margin-bottom: 24px;
+  padding-left: 24px;
+}
+
+.blog-post-body li {
+  margin-bottom: 12px;
+}
+
+.blog-post-body li strong {
+  color: var(--royal-blue, #1565C0);
+}
+
+@media (max-width: 640px) {
+  .blog-post-page {
+    padding: 30px 16px 80px;
+  }
+  
+  .blog-post-article {
+    padding: 32px 24px;
+  }
+}

@@ -46,7 +46,7 @@ function UpiInput() {
       setShakeKey((k) => k + 1);
       return;
     }
-    navigate(`/shop/${encodeURIComponent(upiId.trim())}`);
+    navigate(`/shop/${encodeURIComponent(upiId.trim().toLowerCase())}`);
   };
 
   const handleKeyDown = (e) => {

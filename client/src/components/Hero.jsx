@@ -165,7 +165,7 @@ function Hero() {
 
   const handleScan = (upiId) => {
     setScannerOpen(false);
-    if (upiId) navigate(`/shop/${encodeURIComponent(upiId)}`);
+    if (upiId) navigate(`/shop/${encodeURIComponent(upiId.toLowerCase())}`);
   };
 
   return (
