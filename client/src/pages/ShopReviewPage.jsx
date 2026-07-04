@@ -5,6 +5,7 @@ import {
   ArrowLeft, Store, MapPin, Send, CheckCircle, Navigation,
   Loader, QrCode, Pencil, LogIn,
   Check, X, AlertCircle,
+  ThumbsUp, Sparkles, Clock, Coins, Smile, Timer
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { resolveHash } from '../lib/upiHash';
@@ -188,6 +189,7 @@ export default function ShopReviewPage() {
   const [reviews, setReviews] = useState([]);
   const [loadingReviews, setLoadingReviews] = useState(true);
   const [sortBy, setSortBy] = useState('recent');
+  const [votedReviewIds, setVotedReviewIds] = useState(new Set());
 
   /* Shop info from community suggestions */
   const [shopDisplayName, setShopDisplayName] = useState('');
@@ -280,29 +282,64 @@ export default function ShopReviewPage() {
 
         if (isMounted) {
           setReviews((reviewData || []).map((row) => ({
+            ...row,
             id: row.id,
             author: row.author || 'Anonymous',
             rating: row.rating,
             text: row.text,
             helpful: row.helpful || 0,
-            date: row.created_at
-              ? new Date(row.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })
-              : 'Just now',
+            date: row.created_at || 'Just now',
           })));
         }
 
-        // Fetch community shop info (most voted)
-        const { data: suggData } = await supabase
-          .from('shop_suggestions')
-          .select('suggested_name, suggested_type, votes')
-          .eq('shop_id', decodedUpiId)
-          .order('votes', { ascending: false })
-          .limit(1)
+        // Fetch shop details from the shops table
+        const { data: shopData } = await supabase
+          .from('shops')
+          .select('display_name, shop_type, name, category')
+          .eq('upi_id', decodedUpiId)
           .maybeSingle();
 
-        if (isMounted && suggData) {
-          if (suggData.suggested_name) setShopDisplayName(suggData.suggested_name);
-          if (suggData.suggested_type) setShopType(suggData.suggested_type);
+        if (isMounted && shopData) {
+          const dbName = shopData.display_name || shopData.name;
+          const dbType = shopData.shop_type || shopData.category;
+          if (dbName) setShopDisplayName(dbName);
+          if (dbType) setShopType(dbType);
+        }
+
+        // Fetch all community shop info suggestions
+        const { data: allSugg } = await supabase
+          .from('shop_suggestions')
+          .select('suggested_name, suggested_type, votes, created_at')
+          .eq('shop_id', decodedUpiId);
+
+        if (isMounted && allSugg && allSugg.length > 0) {
+          // Find highest voted name suggestion
+          const nameSugg = allSugg
+            .filter((s) => s.suggested_name)
+            .sort((a, b) => b.votes - a.votes)[0];
+          if (nameSugg) setShopDisplayName(nameSugg.suggested_name);
+
+          // Find latest type suggestion
+          const typeSugg = allSugg
+            .filter((s) => s.suggested_type)
+            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+          if (typeSugg) setShopType(typeSugg.suggested_type);
+        }
+
+        // Fetch user voted reviews
+        const localVotes = JSON.parse(localStorage.getItem('ratemyshop_voted_reviews') || '[]');
+        let dbVotesList = [];
+        if (user) {
+          const { data: dbVotes } = await supabase
+            .from('review_votes')
+            .select('review_id')
+            .eq('user_id', user.id);
+          if (dbVotes) {
+            dbVotesList = dbVotes.map((v) => v.review_id);
+          }
+        }
+        if (isMounted) {
+          setVotedReviewIds(new Set([...localVotes, ...dbVotesList]));
         }
       } catch (err) {
         console.error('Fetch error:', err);
@@ -313,7 +350,7 @@ export default function ShopReviewPage() {
 
     fetchAll();
     return () => { isMounted = false; };
-  }, [decodedUpiId]);
+  }, [decodedUpiId, user]);
 
   /* ── Geolocation ────────────────────────────────── */
   const handleDetectLocation = useCallback(() => {
@@ -370,7 +407,13 @@ export default function ShopReviewPage() {
     try {
       // Upsert shop
       await supabase.from('shops').upsert(
-        { upi_id: decodedUpiId, name: shopDisplayName, category: shopType },
+        { 
+          upi_id: decodedUpiId, 
+          display_name: shopDisplayName,
+          name: shopDisplayName, 
+          shop_type: shopType,
+          category: shopType 
+        },
         { onConflict: 'upi_id' }
       );
 
@@ -420,6 +463,7 @@ export default function ShopReviewPage() {
       if (error) throw error;
 
       setReviews([{
+        ...inserted,
         id: inserted.id,
         author: inserted.author,
         rating: inserted.rating,
@@ -450,13 +494,44 @@ export default function ShopReviewPage() {
 
   /* ── Helpful vote ────────────────────────────────── */
   const handleHelpful = useCallback(async (reviewId) => {
+    if (votedReviewIds.has(reviewId)) return;
+
+    setVotedReviewIds((prev) => {
+      const next = new Set(prev);
+      next.add(reviewId);
+      return next;
+    });
+
+    try {
+      const localVoted = JSON.parse(localStorage.getItem('ratemyshop_voted_reviews') || '[]');
+      if (!localVoted.includes(reviewId)) {
+        localVoted.push(reviewId);
+        localStorage.setItem('ratemyshop_voted_reviews', JSON.stringify(localVoted));
+      }
+    } catch (e) {
+      console.warn('LocalStorage save error:', e);
+    }
+
+    if (user) {
+      try {
+        await supabase.from('review_votes').insert({ user_id: user.id, review_id: reviewId });
+      } catch (err) {
+        console.warn('DB vote insertion error:', err);
+      }
+    }
+
     try {
       const { data: current } = await supabase.from('reviews').select('helpful').eq('id', reviewId).single();
-      await supabase.from('reviews').update({ helpful: (current?.helpful || 0) + 1 }).eq('id', reviewId);
+      const newHelpfulCount = (current?.helpful || 0) + 1;
+      await supabase.from('reviews').update({ helpful: newHelpfulCount }).eq('id', reviewId);
+
+      setReviews((prev) =>
+        prev.map((r) => (r.id === reviewId ? { ...r, helpful: newHelpfulCount } : r))
+      );
     } catch (err) {
       console.error('Helpful error:', err);
     }
-  }, []);
+  }, [user, votedReviewIds]);
 
   const sortedReviews = useMemo(() => sortReviews(reviews, sortBy), [reviews, sortBy]);
   const averageRating = useMemo(() => {
@@ -472,6 +547,276 @@ export default function ShopReviewPage() {
   const canSubmit = newRating > 0 && newReviewText.trim().length >= 3;
 
   const shopTypeLabel = SHOP_TYPES.find((t) => t.value === shopType)?.label || 'Shop';
+
+  /* ── Shop summary metrics ────────────────────────── */
+  const shopSummaryMetrics = useMemo(() => {
+    if (!reviews.length) return null;
+
+    let openVotes = 0;
+    let closedVotes = 0;
+    let hygienicVotes = 0;
+    let unhygienicVotes = 0;
+    let recommendVotes = 0;
+    let disrecommendVotes = 0;
+    let priceSum = 0;
+    let priceCount = 0;
+    let staffSum = 0;
+    let staffCount = 0;
+    const waitCounts = { short: 0, medium: 0, long: 0 };
+    let waitTotal = 0;
+
+    reviews.forEach((r) => {
+      if (r.is_open === true) openVotes++;
+      if (r.is_open === false) closedVotes++;
+      
+      if (r.is_hygienic === true) hygienicVotes++;
+      if (r.is_hygienic === false) unhygienicVotes++;
+
+      if (r.would_recommend === true) recommendVotes++;
+      if (r.would_recommend === false) disrecommendVotes++;
+
+      if (r.price_range) {
+        priceSum += r.price_range;
+        priceCount++;
+      }
+
+      if (r.staff_behaviour) {
+        staffSum += r.staff_behaviour;
+        staffCount++;
+      }
+
+      if (r.wait_time) {
+        waitCounts[r.wait_time]++;
+        waitTotal++;
+      }
+    });
+
+    const openPercent = (openVotes + closedVotes) > 0 ? Math.round((openVotes / (openVotes + closedVotes)) * 100) : null;
+    const hygienePercent = (hygienicVotes + unhygienicVotes) > 0 ? Math.round((hygienicVotes / (hygienicVotes + unhygienicVotes)) * 100) : null;
+    const recommendPercent = (recommendVotes + disrecommendVotes) > 0 ? Math.round((recommendVotes / (recommendVotes + disrecommendVotes)) * 100) : null;
+    
+    const avgPrice = priceCount > 0 ? Math.round(priceSum / priceCount) : null;
+    const avgStaff = staffCount > 0 ? (staffSum / staffCount).toFixed(1) : null;
+
+    let commonWait = null;
+    if (waitTotal > 0) {
+      if (waitCounts.short >= waitCounts.medium && waitCounts.short >= waitCounts.long) commonWait = 'short';
+      else if (waitCounts.medium >= waitCounts.short && waitCounts.medium >= waitCounts.long) commonWait = 'medium';
+      else commonWait = 'long';
+    }
+
+    return {
+      openPercent,
+      hygienePercent,
+      recommendPercent,
+      avgPrice,
+      avgStaff,
+      commonWait,
+    };
+  }, [reviews]);
+
+  /* ── 24h Hourly Open Rates calculation ───────────── */
+  const { hourlyOpenRates, totalOpenReports } = useMemo(() => {
+    const rates = Array(24).fill(0);
+    const totals = Array(24).fill(0);
+    let count = 0;
+
+    reviews.forEach((r) => {
+      if (r.is_open === null || r.is_open === undefined) return;
+      const dateStr = r.created_at || r.date;
+      if (!dateStr || dateStr === 'Just now') return;
+
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return;
+      const hour = date.getHours();
+
+      if (r.is_open === true) {
+        rates[hour]++;
+      }
+      totals[hour]++;
+      count++;
+    });
+
+    const ratesPercent = rates.map((val, idx) => (totals[idx] > 0 ? Math.round((val / totals[idx]) * 100) : 0));
+    return { hourlyOpenRates: ratesPercent, totalOpenReports: count };
+  }, [reviews]);
+
+  const render24hChart = () => {
+    const currentHour = new Date().getHours();
+    const currentPct = hourlyOpenRates[currentHour];
+    let statusText = 'No recent reports for this hour';
+    if (hourlyOpenRates.some(r => r > 0)) {
+      statusText = currentPct > 50 
+        ? 'Probably open right now' 
+        : currentPct > 0 
+          ? 'Might be open right now' 
+          : 'Likely closed right now';
+    }
+
+    return (
+      <div className="open-chart-wrapper">
+        <div className="open-chart-bars">
+          {hourlyOpenRates.map((pct, hour) => {
+            const isCurrent = hour === currentHour;
+            const heightVal = pct > 0 ? `${pct}%` : '4px';
+            
+            let barColor = '#E2E8F0';
+            if (pct > 0) {
+              if (isCurrent) barColor = 'var(--deep-red)';
+              else if (pct >= 80) barColor = 'var(--teal)';
+              else if (pct >= 50) barColor = 'var(--gold)';
+              else barColor = 'var(--saffron)';
+            }
+
+            return (
+              <div 
+                key={hour} 
+                className={`open-chart-bar-col ${isCurrent ? 'is-current' : ''}`}
+                style={{ height: '74px' }}
+                title={`${hour}:00 - ${pct}% open probability`}
+              >
+                <div 
+                  className="open-chart-bar-fill" 
+                  style={{ 
+                    height: heightVal, 
+                    backgroundColor: barColor,
+                    borderRadius: '2px 2px 0 0'
+                  }} 
+                />
+              </div>
+            );
+          })}
+        </div>
+        <div className="open-chart-labels">
+          <span>12A</span>
+          <span>6A</span>
+          <span>12P</span>
+          <span>6P</span>
+          <span>11P</span>
+        </div>
+        <span className="open-chart-status">{statusText}</span>
+      </div>
+    );
+  };
+
+  const renderSummaryCard = () => {
+    if (!shopSummaryMetrics) return null;
+    const { hygienePercent, recommendPercent, avgPrice, avgStaff, commonWait } = shopSummaryMetrics;
+
+    const priceLabel = avgPrice === 1 ? 'Budget (₹)' : avgPrice === 2 ? 'Moderate (₹₹)' : avgPrice === 3 ? 'Pricey (₹₹₹)' : 'Premium (₹₹₹x)';
+    const waitLabel = commonWait === 'short' ? 'Quick Service' : commonWait === 'medium' ? 'Average Wait' : 'Slow Service';
+
+    const hasAnyMetric = hygienePercent !== null || recommendPercent !== null || avgPrice !== null || avgStaff !== null || commonWait !== null;
+
+    if (!hasAnyMetric) return null;
+
+    return (
+      <div className="shop-summary-card">
+        <h3 className="shop-summary-title">Community Summary</h3>
+        <div className="shop-summary-list">
+          {recommendPercent !== null && (
+            <div className="summary-item">
+              <div className="summary-icon-wrap">
+                <ThumbsUp size={14} />
+              </div>
+              <div className="summary-details">
+                <div className="summary-row">
+                  <span className="summary-lbl">Recommendation Rate</span>
+                  <span className="summary-val">{recommendPercent}%</span>
+                </div>
+                <div className="summary-progress-bar">
+                  <div className="summary-progress-fill" style={{ width: `${recommendPercent}%`, backgroundColor: 'var(--teal)' }} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {hygienePercent !== null && (
+            <div className="summary-item">
+              <div className="summary-icon-wrap">
+                <Sparkles size={14} />
+              </div>
+              <div className="summary-details">
+                <div className="summary-row">
+                  <span className="summary-lbl">Cleanliness Score</span>
+                  <span className="summary-val">{hygienePercent}%</span>
+                </div>
+                <div className="summary-progress-bar">
+                  <div className="summary-progress-fill" style={{ width: `${hygienePercent}%`, backgroundColor: 'var(--saffron)' }} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {avgPrice !== null && (
+            <div className="summary-item">
+              <div className="summary-icon-wrap">
+                <Coins size={14} />
+              </div>
+              <div className="summary-details">
+                <div className="summary-row">
+                  <span className="summary-lbl">Price Level</span>
+                  <span className="summary-val">{priceLabel}</span>
+                </div>
+                <div className="summary-price-indicator">
+                  <span className={avgPrice >= 1 ? 'active' : ''}>₹</span>
+                  <span className={avgPrice >= 2 ? 'active' : ''}>₹</span>
+                  <span className={avgPrice >= 3 ? 'active' : ''}>₹</span>
+                  <span className={avgPrice >= 4 ? 'active' : ''}>₹</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {avgStaff !== null && (
+            <div className="summary-item">
+              <div className="summary-icon-wrap">
+                <Smile size={14} />
+              </div>
+              <div className="summary-details">
+                <div className="summary-row">
+                  <span className="summary-lbl">Staff Behaviour</span>
+                  <span className="summary-val">{avgStaff} / 5</span>
+                </div>
+                <div className="summary-progress-bar">
+                  <div className="summary-progress-fill" style={{ width: `${(parseFloat(avgStaff) / 5) * 100}%`, backgroundColor: 'var(--gold)' }} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {commonWait !== null && (
+            <div className="summary-item">
+              <div className="summary-icon-wrap">
+                <Timer size={14} />
+              </div>
+              <div className="summary-details">
+                <div className="summary-row">
+                  <span className="summary-lbl">Average Wait Time</span>
+                  <span className="summary-val">{waitLabel}</span>
+                </div>
+                <div className="summary-wait-indicator">
+                  <span className={`wait-segment ${commonWait === 'short' ? 'active' : ''}`} />
+                  <span className={`wait-segment ${commonWait === 'medium' ? 'active' : ''}`} />
+                  <span className={`wait-segment ${commonWait === 'long' ? 'active' : ''}`} />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderOpenHoursCard = () => {
+    if (totalOpenReports === 0) return null;
+    return (
+      <div className="shop-summary-card">
+        <h3 className="shop-summary-title">Hourly Open Rate</h3>
+        {render24hChart()}
+      </div>
+    );
+  };
 
   if (resolvingError) {
     return (
@@ -572,14 +917,16 @@ export default function ShopReviewPage() {
                   >
                     <div className="shop-name-row">
                       <h1 className="shop-name">{shopDisplayName}</h1>
-                      <button
-                        className="shop-name-edit-icon"
-                        onClick={() => { setSuggestName(shopDisplayName); setSuggestType(shopType); setIsEditingShopInfo(true); }}
-                        aria-label="Suggest a name correction"
-                        title="Suggest a correction"
-                      >
-                        <Pencil size={13} />
-                      </button>
+                      {user && (
+                        <button
+                          className="shop-name-edit-icon"
+                          onClick={() => { setSuggestName(shopDisplayName); setSuggestType(shopType); setIsEditingShopInfo(true); }}
+                          aria-label="Suggest a name correction"
+                          title="Suggest a correction"
+                        >
+                          <Pencil size={13} />
+                        </button>
+                      )}
                     </div>
                     <p className="shop-category">
                       <Store size={14} />
@@ -620,33 +967,37 @@ export default function ShopReviewPage() {
       <div className={`shop-content ${!hasReviews ? 'shop-content--empty' : ''}`}>
 
         {hasReviews && (
-          <motion.aside className="rating-distribution-card"
-            initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.25 }}>
-            <h3 className="rating-dist-title">Rating Breakdown</h3>
-            {[5, 4, 3, 2, 1].map((star, i) => {
-              const count = ratingCounts[star];
-              const pct = reviews.length > 0 ? Math.round((count / reviews.length) * 100) : 0;
-              const widthPct = maxCount > 0 ? (count / maxCount) * 100 : 0;
-              return (
-                <div className="rating-bar-row" key={star}>
-                  <span className="rating-bar-label">
-                    {star}
-                    <svg viewBox="0 0 24 24" fill="#F9A825" stroke="#F57F17" strokeWidth="1.5">
-                      <path d={STAR_PATH} />
-                    </svg>
-                  </span>
-                  <div className="rating-bar-track">
-                    <motion.div className="rating-bar-fill" data-rating={star}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${widthPct}%` }}
-                      transition={{ duration: 0.8, delay: 0.3 + i * 0.08, ease: [0.22, 1, 0.36, 1] }} />
+          <div className="shop-sidebar-stack">
+            <motion.aside className="rating-distribution-card"
+              initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.25 }}>
+              <h3 className="rating-dist-title">Rating Breakdown</h3>
+              {[5, 4, 3, 2, 1].map((star, i) => {
+                const count = ratingCounts[star];
+                const pct = reviews.length > 0 ? Math.round((count / reviews.length) * 100) : 0;
+                const widthPct = maxCount > 0 ? (count / maxCount) * 100 : 0;
+                return (
+                  <div className="rating-bar-row" key={star}>
+                    <span className="rating-bar-label">
+                      {star}
+                      <svg viewBox="0 0 24 24" fill="#F9A825" stroke="#F57F17" strokeWidth="1.5">
+                        <path d={STAR_PATH} />
+                      </svg>
+                    </span>
+                    <div className="rating-bar-track">
+                      <motion.div className="rating-bar-fill" data-rating={star}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${widthPct}%` }}
+                        transition={{ duration: 0.8, delay: 0.3 + i * 0.08, ease: [0.22, 1, 0.36, 1] }} />
+                    </div>
+                    <span className="rating-bar-count">{pct}%</span>
                   </div>
-                  <span className="rating-bar-count">{pct}%</span>
-                </div>
-              );
-            })}
-          </motion.aside>
+                );
+              })}
+            </motion.aside>
+            {renderSummaryCard()}
+            {renderOpenHoursCard()}
+          </div>
         )}
 
         <div className="reviews-section">
@@ -668,7 +1019,12 @@ export default function ShopReviewPage() {
             </div>
           ) : sortedReviews.length > 0 ? (
             sortedReviews.map((review) => (
-              <ReviewCard key={review.id} review={review} onHelpful={handleHelpful} />
+              <ReviewCard 
+                key={review.id} 
+                review={review} 
+                voted={votedReviewIds.has(review.id)} 
+                onHelpful={handleHelpful} 
+              />
             ))
           ) : (
             <motion.div className="empty-state"

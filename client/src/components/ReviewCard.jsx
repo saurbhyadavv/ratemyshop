@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ThumbsUp } from 'lucide-react';
 import StarRating from './StarRating';
@@ -19,8 +19,12 @@ function getAvatarColor(name) {
 }
 
 function formatDate(dateStr) {
+  if (!dateStr || dateStr === 'Just now') return 'Just now';
   try {
     const date = new Date(dateStr);
+    if (isNaN(date.getTime())) {
+      return dateStr;
+    }
     return date.toLocaleDateString('en-IN', {
       year: 'numeric',
       month: 'short',
@@ -31,18 +35,31 @@ function formatDate(dateStr) {
   }
 }
 
-export default function ReviewCard({ review, onHelpful }) {
-  const { id, author, rating, date, text, helpful } = review;
-  const [voted, setVoted] = useState(false);
+export default function ReviewCard({ review, voted = false, onHelpful }) {
+  const {
+    id, author, rating, date, text, helpful,
+    price_range, is_hygienic, is_open, wait_time, would_recommend,
+    food_spice, inventory_level, medicine_availability, appointment_needed, warranty_given
+  } = review;
+
+  const [votedLocal, setVotedLocal] = useState(voted);
   const [localHelpful, setLocalHelpful] = useState(helpful || 0);
+
+  useEffect(() => {
+    setVotedLocal(voted);
+  }, [voted]);
+
+  useEffect(() => {
+    setLocalHelpful(helpful || 0);
+  }, [helpful]);
 
   const avatarBg = useMemo(() => getAvatarColor(author || ''), [author]);
   const initial = (author || '?').charAt(0).toUpperCase();
   const formattedDate = useMemo(() => formatDate(date), [date]);
 
   const handleHelpfulClick = () => {
-    if (voted) return;
-    setVoted(true);
+    if (votedLocal) return;
+    setVotedLocal(true);
     setLocalHelpful((prev) => prev + 1);
     if (onHelpful) onHelpful(id);
   };
@@ -71,18 +88,58 @@ export default function ReviewCard({ review, onHelpful }) {
         <StarRating rating={rating} readonly size={18} />
       </div>
 
+      {/* Structured review tags */}
+      <div className="reviewTags">
+        {price_range && <span className="reviewTag reviewTag--price">{"₹".repeat(price_range)}</span>}
+        
+        {is_hygienic !== null && is_hygienic !== undefined && (
+          <span className={`reviewTag reviewTag--hygiene ${is_hygienic ? 'success' : 'danger'}`}>
+            {is_hygienic ? 'Hygienic' : 'Unhygienic'}
+          </span>
+        )}
+
+        {is_open !== null && is_open !== undefined && (
+          <span className={`reviewTag reviewTag--open ${is_open ? 'success' : 'danger'}`}>
+            {is_open ? 'Open' : 'Closed'}
+          </span>
+        )}
+
+        {wait_time && (
+          <span className="reviewTag reviewTag--wait">
+            {wait_time === 'short' ? 'Quick Service' : wait_time === 'medium' ? 'Average Wait' : 'Slow Service'}
+          </span>
+        )}
+
+        {would_recommend !== null && would_recommend !== undefined && (
+          <span className={`reviewTag reviewTag--recommend ${would_recommend ? 'success' : 'danger'}`}>
+            {would_recommend ? '👍 Recommends' : '👎 Dislikes'}
+          </span>
+        )}
+
+        {/* Category specific details */}
+        {food_spice && <span className="reviewTag reviewTag--context">Spice: {food_spice}</span>}
+        {inventory_level && <span className="reviewTag reviewTag--context">Stock: {inventory_level}</span>}
+        {medicine_availability && <span className="reviewTag reviewTag--context">Meds: {medicine_availability}</span>}
+        {appointment_needed !== null && appointment_needed !== undefined && (
+          <span className="reviewTag reviewTag--context">{appointment_needed ? 'Appt. Required' : 'Walk-in OK'}</span>
+        )}
+        {warranty_given !== null && warranty_given !== undefined && (
+          <span className="reviewTag reviewTag--context">{warranty_given ? 'Warranty Given' : 'No Warranty'}</span>
+        )}
+      </div>
+
       <p className="reviewText">{text}</p>
 
       <div className="reviewFooter">
         <motion.button
-          className={`helpfulBtn ${voted ? 'helpfulBtn--active' : ''}`}
+          className={`helpfulBtn ${votedLocal ? 'helpfulBtn--active' : ''}`}
           type="button"
           onClick={handleHelpfulClick}
-          disabled={voted}
-          whileTap={!voted ? { scale: 0.9 } : {}}
+          disabled={votedLocal}
+          whileTap={!votedLocal ? { scale: 0.9 } : {}}
         >
           <ThumbsUp />
-          {voted ? 'Thanked!' : 'Helpful'}
+          {votedLocal ? 'Thanked!' : 'Helpful'}
         </motion.button>
         {localHelpful > 0 && (
           <span className="helpfulCount">
