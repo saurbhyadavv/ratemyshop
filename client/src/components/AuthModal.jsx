@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mail, Phone, Eye, EyeOff, ArrowRight, CheckCircle } from 'lucide-react';
+import { X, Mail, Eye, EyeOff, ArrowRight, CheckCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './AuthModal.css';
 
@@ -17,29 +17,18 @@ function GoogleIcon() {
 }
 
 export default function AuthModal({ isOpen, onClose }) {
-  const [activeTab, setActiveTab] = useState('email'); // 'email' | 'phone'
   const [emailMode, setEmailMode] = useState('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
-  const [phoneSent, setPhoneSent] = useState(false);
-  const [formattedPhone, setFormattedPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const { signInWithGoogle, signUpWithEmail, signInWithEmail, sendPhoneOtp, verifyPhoneOtp } = useAuth();
+  const { signInWithGoogle, signUpWithEmail, signInWithEmail } = useAuth();
 
   const reset = () => { setError(''); setSuccess(''); };
-
-  const handleTabChange = (tab) => {
-    setActiveTab(tab);
-    reset();
-    setPhoneSent(false);
-  };
 
   const handleGoogleSignIn = async () => {
     reset();
@@ -69,38 +58,6 @@ export default function AuthModal({ isOpen, onClose }) {
       }
     } catch (err) {
       setError(err.message || 'Sign-in failed. Check your credentials.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSendOtp = async (e) => {
-    e.preventDefault();
-    reset();
-    const digits = phone.replace(/\D/g, '');
-    if (digits.length < 10) return setError('Enter a valid 10-digit mobile number.');
-    setLoading(true);
-    try {
-      const fp = await sendPhoneOtp(phone);
-      setFormattedPhone(fp);
-      setPhoneSent(true);
-    } catch (err) {
-      setError(err.message || 'Could not send OTP. Check the number and try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async (e) => {
-    e.preventDefault();
-    reset();
-    if (otp.length < 4) return setError('Enter the 6-digit OTP.');
-    setLoading(true);
-    try {
-      await verifyPhoneOtp(formattedPhone, otp);
-      onClose();
-    } catch (err) {
-      setError(err.message || 'Invalid OTP. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -155,184 +112,71 @@ export default function AuthModal({ isOpen, onClose }) {
               <span className="auth-divider__line" />
             </div>
 
-            {/* Email / Phone tabs */}
-            <div className="auth-tabs" role="tablist">
-              <button
-                className={`auth-tab ${activeTab === 'email' ? 'auth-tab--active' : ''}`}
-                onClick={() => handleTabChange('email')}
-                role="tab"
-                aria-selected={activeTab === 'email'}
-              >
-                <Mail size={14} />
-                Email
-              </button>
-              <button
-                className={`auth-tab ${activeTab === 'phone' ? 'auth-tab--active' : ''}`}
-                onClick={() => handleTabChange('phone')}
-                role="tab"
-                aria-selected={activeTab === 'phone'}
-              >
-                <Phone size={14} />
-                Phone OTP
-              </button>
-            </div>
-
             <div className="auth-body">
-              {/* Email tab */}
-              <AnimatePresence mode="wait">
-                {activeTab === 'email' && (
-                  <motion.div key="email"
-                    initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.18 }}>
+              <div className="auth-mode-toggle" role="group">
+                <button
+                  className={emailMode === 'signin' ? 'active' : ''}
+                  onClick={() => { setEmailMode('signin'); reset(); }}
+                >Sign In</button>
+                <button
+                  className={emailMode === 'signup' ? 'active' : ''}
+                  onClick={() => { setEmailMode('signup'); reset(); }}
+                >Create Account</button>
+              </div>
 
-                    <div className="auth-mode-toggle" role="group">
-                      <button
-                        className={emailMode === 'signin' ? 'active' : ''}
-                        onClick={() => { setEmailMode('signin'); reset(); }}
-                      >Sign In</button>
-                      <button
-                        className={emailMode === 'signup' ? 'active' : ''}
-                        onClick={() => { setEmailMode('signup'); reset(); }}
-                      >Create Account</button>
-                    </div>
+              <form className="auth-form" onSubmit={handleEmailSubmit} noValidate>
+                <div className="form-field">
+                  <label htmlFor="auth-email">Email address</label>
+                  <div className="field-input-wrap">
+                    <Mail size={15} className="field-icon" />
+                    <input
+                      id="auth-email"
+                      type="email"
+                      placeholder="you@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      autoComplete="email"
+                      autoFocus
+                      required
+                    />
+                  </div>
+                </div>
 
-                    <form className="auth-form" onSubmit={handleEmailSubmit} noValidate>
-                      <div className="form-field">
-                        <label htmlFor="auth-email">Email address</label>
-                        <div className="field-input-wrap">
-                          <Mail size={15} className="field-icon" />
-                          <input
-                            id="auth-email"
-                            type="email"
-                            placeholder="you@email.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            autoComplete="email"
-                            autoFocus
-                            required
-                          />
-                        </div>
-                      </div>
+                <div className="form-field">
+                  <label htmlFor="auth-password">Password</label>
+                  <div className="field-input-wrap">
+                    <button
+                      type="button"
+                      className="field-eye"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                    <input
+                      id="auth-password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Min. 6 characters"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      autoComplete={emailMode === 'signup' ? 'new-password' : 'current-password'}
+                      required
+                    />
+                  </div>
+                </div>
 
-                      <div className="form-field">
-                        <label htmlFor="auth-password">Password</label>
-                        <div className="field-input-wrap">
-                          <button
-                            type="button"
-                            className="field-eye"
-                            onClick={() => setShowPassword((v) => !v)}
-                            aria-label={showPassword ? 'Hide password' : 'Show password'}
-                          >
-                            {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                          </button>
-                          <input
-                            id="auth-password"
-                            type={showPassword ? 'text' : 'password'}
-                            placeholder="Min. 6 characters"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            autoComplete={emailMode === 'signup' ? 'new-password' : 'current-password'}
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      {error && <p className="auth-error">{error}</p>}
-                      {success && (
-                        <p className="auth-success">
-                          <CheckCircle size={14} /> {success}
-                        </p>
-                      )}
-
-                      <button type="submit" className="btn-primary" disabled={loading}>
-                        {loading ? 'Please wait…' : emailMode === 'signup' ? 'Create Account' : 'Sign In'}
-                        {!loading && <ArrowRight size={15} />}
-                      </button>
-                    </form>
-                  </motion.div>
+                {error && <p className="auth-error">{error}</p>}
+                {success && (
+                  <p className="auth-success">
+                    <CheckCircle size={14} /> {success}
+                  </p>
                 )}
 
-                {/* Phone tab */}
-                {activeTab === 'phone' && (
-                  <motion.div key="phone"
-                    initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.18 }}>
-
-                    {!phoneSent ? (
-                      <form className="auth-form" onSubmit={handleSendOtp} noValidate>
-                        <div className="form-field">
-                          <label htmlFor="auth-phone">Indian mobile number</label>
-                          <div className="field-input-wrap field-input-wrap--phone">
-                            <span className="field-prefix">+91</span>
-                            <input
-                              id="auth-phone"
-                              type="tel"
-                              placeholder="10-digit number"
-                              value={phone}
-                              onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                              autoComplete="tel"
-                              autoFocus
-                              required
-                            />
-                          </div>
-                        </div>
-
-                        {error && <p className="auth-error">{error}</p>}
-
-                        <button type="submit" className="btn-primary" disabled={loading}>
-                          {loading ? 'Sending OTP…' : 'Send OTP'}
-                          {!loading && <ArrowRight size={15} />}
-                        </button>
-                        {(() => {
-                          const isLocalhost = typeof window !== 'undefined' && 
-                            (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-                          return isLocalhost ? (
-                            <p className="auth-note">
-                              Phone auth requires deployment on ratemyshop.in - may not work on localhost.
-                            </p>
-                          ) : null;
-                        })()}
-                      </form>
-                    ) : (
-                      <form className="auth-form" onSubmit={handleVerifyOtp} noValidate>
-                        <div className="otp-sent-banner">
-                          OTP sent to <strong>{formattedPhone}</strong>
-                        </div>
-                        <div className="form-field">
-                          <label htmlFor="auth-otp">6-digit OTP</label>
-                          <div className="field-input-wrap">
-                            <input
-                              id="auth-otp"
-                              type="text"
-                              inputMode="numeric"
-                              placeholder="Enter code"
-                              value={otp}
-                              onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                              autoComplete="one-time-code"
-                              autoFocus
-                              required
-                            />
-                          </div>
-                        </div>
-
-                        {error && <p className="auth-error">{error}</p>}
-
-                        <button type="submit" className="btn-primary" disabled={loading}>
-                          {loading ? 'Verifying…' : 'Verify OTP'}
-                          {!loading && <ArrowRight size={15} />}
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-ghost"
-                          onClick={() => { setPhoneSent(false); setOtp(''); reset(); }}
-                        >
-                          Change number
-                        </button>
-                      </form>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                <button type="submit" className="btn-primary" disabled={loading}>
+                  {loading ? 'Please wait…' : emailMode === 'signup' ? 'Create Account' : 'Sign In'}
+                  {!loading && <ArrowRight size={15} />}
+                </button>
+              </form>
             </div>
 
             <p className="auth-terms">

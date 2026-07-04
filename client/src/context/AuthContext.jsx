@@ -48,24 +48,6 @@ export function AuthProvider({ children }) {
     return data;
   };
 
-  const sendPhoneOtp = async (phone) => {
-    // Ensure E.164 format — prepend +91 if bare Indian number
-    const formatted = phone.startsWith('+') ? phone : `+91${phone.replace(/\D/g, '')}`;
-    const { error } = await supabase.auth.signInWithOtp({ phone: formatted });
-    if (error) throw error;
-    return formatted;
-  };
-
-  const verifyPhoneOtp = async (phone, token) => {
-    const { data, error } = await supabase.auth.verifyOtp({
-      phone,
-      token,
-      type: 'sms',
-    });
-    if (error) throw error;
-    return data;
-  };
-
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
@@ -74,7 +56,6 @@ export function AuthProvider({ children }) {
   const displayName = user?.user_metadata?.full_name
     || user?.user_metadata?.name
     || user?.email?.split('@')[0]
-    || user?.phone?.slice(-4)
     || 'User';
 
   const avatarUrl = user?.user_metadata?.avatar_url || null;
@@ -89,8 +70,6 @@ export function AuthProvider({ children }) {
       signInWithGoogle,
       signUpWithEmail,
       signInWithEmail,
-      sendPhoneOtp,
-      verifyPhoneOtp,
       signOut,
     }}>
       {children}
