@@ -14,7 +14,7 @@ const pageVariants = {
 export default function BlogPage() {
   // Generate JSON-LD
   useEffect(() => {
-    document.title = 'Blog — RateMyShop | Insights on Local Commerce';
+    document.title = 'Blog - RateMyShop | Insights on Local Commerce';
     
     const blogJsonLd = {
       "@context": "https://schema.org",
@@ -90,7 +90,7 @@ export default function BlogPage() {
               <p className="blog-card__excerpt">{post.excerpt}</p>
               
               <Link 
-                to={`/blog/${post.id}`}
+                to={`/blog/${post.slug}`}
                 className="blog-card__read-btn"
               >
                 Read Article <ChevronRight size={16} />

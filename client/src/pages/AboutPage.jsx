@@ -45,7 +45,7 @@ export default function AboutPage() {
 
   /* ── Page title ──────────────────────────────── */
   useEffect(() => {
-    document.title = 'About — RateMyShop.in | Empowering Local Commerce';
+    document.title = 'About - RateMyShop.in | Empowering Local Commerce';
   }, []);
 
   return (
@@ -101,7 +101,7 @@ export default function AboutPage() {
               The Problem
             </motion.span>
             <motion.h2 className="section-title" variants={fadeUp} custom={1}>
-              We review everything online — except the shops we actually visit
+              We review everything online - except the shops we actually visit
             </motion.h2>
           </motion.div>
 
@@ -143,7 +143,7 @@ export default function AboutPage() {
             <motion.div className="problem-content" variants={fadeUp} custom={1}>
               <h3>The information gap in local commerce is massive</h3>
               <p>
-                Think about it — you read 20 reviews before ordering biryani on Swiggy,
+                Think about it - you read 20 reviews before ordering biryani on Swiggy,
                 but you have absolutely zero information about the medical store that
                 sells you medicines, the electrician shop that wires your home, or the
                 tailor who stitches your clothes.
@@ -185,7 +185,7 @@ export default function AboutPage() {
           </motion.h2>
           <motion.p className="section-subtitle" style={{ margin: '0 auto' }} variants={fadeUp} custom={2}>
             Every local shop in India already has a UPI QR code. We use it as a
-            unique identifier — no app download, no sign-up hassle, no complex
+            unique identifier - no app download, no sign-up hassle, no complex
             onboarding.
           </motion.p>
         </motion.div>
@@ -201,7 +201,7 @@ export default function AboutPage() {
             <div className="step-number step-1">1</div>
             <h3>Scan the QR</h3>
             <p>
-              Walk into any shop and scan their UPI QR code — the same one you use
+              Walk into any shop and scan their UPI QR code - the same one you use
               for payments. That's all you need to find the shop on RateMyShop.
             </p>
           </motion.div>
@@ -210,7 +210,7 @@ export default function AboutPage() {
             <div className="step-number step-2">2</div>
             <h3>Read & Write Reviews</h3>
             <p>
-              See what others have said — ratings on pricing, quality, behaviour.
+              See what others have said - ratings on pricing, quality, behaviour.
               Had a good experience? Share it. Had a bad one? Warn others.
             </p>
           </motion.div>
@@ -233,7 +233,7 @@ export default function AboutPage() {
           transition={{ delay: 0.4 }}
         >
           <span className="solution-note-icon"><Smartphone size={20} /></span>
-          No app download needed — works entirely in the browser
+          No app download needed - works entirely in the browser
         </motion.div>
       </section>
 
@@ -259,7 +259,7 @@ export default function AboutPage() {
               custom={2}
             >
               RateMyShop creates value for shoppers, shop owners, and entire
-              communities — making local commerce more transparent and trustworthy.
+              communities - making local commerce more transparent and trustworthy.
             </motion.p>
           </motion.div>
 
@@ -336,9 +336,9 @@ export default function AboutPage() {
               <span className="vision-highlight">reviewed & rated</span>
             </h2>
             <p>
-              We envision a future where stepping into any shop — from a tiny
+              We envision a future where stepping into any shop - from a tiny
               paan stall in Varanasi to a bustling electronics market in
-              Hyderabad — comes with the same confidence you feel shopping on
+              Hyderabad - comes with the same confidence you feel shopping on
               Amazon. One review at a time, one shop at a time.
             </p>
 

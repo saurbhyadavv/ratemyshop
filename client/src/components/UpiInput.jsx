@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Smartphone, Check, AlertCircle } from 'lucide-react';
+import { Smartphone, Check, AlertCircle, Loader } from 'lucide-react';
+import { getOrCreateHash } from '../lib/upiHash';
 import './UpiInput.css';
 
 function UpiInput() {
@@ -41,12 +42,24 @@ function UpiInput() {
     else setValid(false);
   };
 
-  const handleSubmit = () => {
+  const [navigating, setNavigating] = useState(false);
+
+  const handleSubmit = async () => {
     if (!validate(upiId)) {
       setShakeKey((k) => k + 1);
       return;
     }
-    navigate(`/shop/${encodeURIComponent(upiId.trim().toLowerCase())}`);
+    setNavigating(true);
+    try {
+      const hash = await getOrCreateHash(upiId.trim().toLowerCase());
+      navigate(`/shop/${hash}`);
+    } catch (err) {
+      console.error('Hash error:', err);
+      // Fallback: use raw encoded UPI ID so the app stays functional
+      navigate(`/shop/${encodeURIComponent(upiId.trim().toLowerCase())}`);
+    } finally {
+      setNavigating(false);
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -82,8 +95,8 @@ function UpiInput() {
           {valid && <Check size={18} className="upi-input__check" />}
           {error && <AlertCircle size={18} className="upi-input__alert" />}
         </div>
-        <button className="upi-input__btn" onClick={handleSubmit}>
-          Find Reviews →
+        <button className="upi-input__btn" onClick={handleSubmit} disabled={navigating}>
+          {navigating ? <Loader size={16} className="spin" /> : 'Find Reviews →'}
         </button>
       </motion.div>
       {error && (

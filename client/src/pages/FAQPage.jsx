@@ -16,7 +16,7 @@ const faqCategories = [
     questions: [
       {
         q: 'What is RateMyShop?',
-        a: 'RateMyShop is India\'s first community-driven review platform for local shops. You can rate and review any shop — from kirana stores to salons — by simply scanning or entering its UPI ID. No app download required.',
+        a: 'RateMyShop is India\'s first community-driven review platform for local shops. You can rate and review any shop - from kirana stores to salons - by simply scanning or entering its UPI ID. No app download required.',
       },
       {
         q: 'How do I review a shop?',
@@ -50,7 +50,7 @@ const faqCategories = [
       },
       {
         q: 'What makes a good review?',
-        a: 'Be specific. Mention what you bought, the pricing, the owner\'s behavior, shop cleanliness, and whether you\'d visit again. Avoid vague statements like "good shop" — details help other shoppers.',
+        a: 'Be specific. Mention what you bought, the pricing, the owner\'s behavior, shop cleanliness, and whether you\'d visit again. Avoid vague statements like "good shop" - details help other shoppers.',
       },
     ],
   },
@@ -60,7 +60,7 @@ const faqCategories = [
     questions: [
       {
         q: 'Why does RateMyShop use UPI IDs?',
-        a: 'Every shop in India that accepts digital payments has a unique UPI ID. This serves as a universal identifier — no need for the shop to register, create accounts, or claim listings. If a shop has a UPI QR code, it can be reviewed.',
+        a: 'Every shop in India that accepts digital payments has a unique UPI ID. This serves as a universal identifier - no need for the shop to register, create accounts, or claim listings. If a shop has a UPI QR code, it can be reviewed.',
       },
       {
         q: 'What if a shop has multiple UPI IDs?',
@@ -82,7 +82,7 @@ const faqCategories = [
       },
       {
         q: 'Can I report a review?',
-        a: 'This feature is coming soon. For now, the community self-moderates through the "Helpful" button — genuine reviews get voted up.',
+        a: 'This feature is coming soon. For now, the community self-moderates through the "Helpful" button - genuine reviews get voted up.',
       },
       {
         q: 'Is my data safe?',
@@ -170,7 +170,7 @@ export default function FAQPage() {
 
   /* Inject JSON-LD and page title */
   useEffect(() => {
-    document.title = 'FAQ — RateMyShop | Review Local Indian Shops by UPI ID';
+    document.title = 'FAQ - RateMyShop | Review Local Indian Shops by UPI ID';
     const script = document.createElement('script');
     script.type = 'application/ld+json';
     script.textContent = JSON.stringify(faqJsonLd);

@@ -1,9 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { QrCode, ScanLine, ChevronRight } from 'lucide-react';
 import UpiInput from './UpiInput';
 import QrScanner from './QrScanner';
+import { getOrCreateHash } from '../lib/upiHash';
 import './Hero.css';
 
 /* ── Madhubani Background SVG Pattern ─────────────── */
@@ -163,9 +164,15 @@ function Hero() {
   const [scannerOpen, setScannerOpen] = useState(false);
   const navigate = useNavigate();
 
-  const handleScan = (upiId) => {
+  const handleScan = async (upiId) => {
     setScannerOpen(false);
-    if (upiId) navigate(`/shop/${encodeURIComponent(upiId.toLowerCase())}`);
+    if (!upiId) return;
+    try {
+      const hash = await getOrCreateHash(upiId.toLowerCase());
+      navigate(`/shop/${hash}`);
+    } catch {
+      navigate(`/shop/${encodeURIComponent(upiId.toLowerCase())}`);
+    }
   };
 
   return (
@@ -189,7 +196,7 @@ function Hero() {
           </motion.h1>
           <motion.p className="hero__subtitle" variants={lineVariants}>
             India's first community-driven review platform for local shops.
-            No app needed — just scan or enter a UPI ID to share your experience.
+            No app needed - just scan or enter a UPI ID to share your experience.
           </motion.p>
         </motion.div>
 

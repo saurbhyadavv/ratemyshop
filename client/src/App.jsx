@@ -16,10 +16,10 @@ function AnimatedRoutes() {
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/shop/:upiId" element={<ShopReviewPage />} />
+        <Route path="/shop/:shopHash" element={<ShopReviewPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/blog" element={<BlogPage />} />
-        <Route path="/blog/:id" element={<BlogPostPage />} />
+        <Route path="/blog/:slug" element={<BlogPostPage />} />
         <Route path="/faq" element={<FAQPage />} />
       </Routes>
     </AnimatePresence>

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Clock } from 'lucide-react';
+import { ArrowLeft, Clock, Tag } from 'lucide-react';
 import { blogPosts } from '../data/blogPosts';
 import './BlogPostPage.css';
 
@@ -12,25 +12,26 @@ const pageVariants = {
 };
 
 export default function BlogPostPage() {
-  const { id } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
-  const post = blogPosts.find((p) => p.id === parseInt(id));
+  const post = blogPosts.find((p) => p.slug === slug);
 
   useEffect(() => {
     if (!post) {
       navigate('/blog', { replace: true });
       return;
     }
-    
-    document.title = `${post.title} — RateMyShop Blog`;
+
+    document.title = `${post.title} - RateMyShop Blog`;
 
     const blogJsonLd = {
-      "@context": "https://schema.org",
-      "@type": "BlogPosting",
-      "headline": post.title,
-      "datePublished": new Date(post.date).toISOString(),
-      "author": { "@type": "Organization", "name": "RateMyShop" },
-      "description": post.excerpt
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: post.title,
+      datePublished: new Date(post.date).toISOString(),
+      author: { '@type': 'Organization', name: 'RateMyShop' },
+      description: post.excerpt,
+      url: `https://ratemyshop.in/blog/${post.slug}`
     };
 
     const script = document.createElement('script');
@@ -55,23 +56,28 @@ export default function BlogPostPage() {
     >
       <div className="blog-post-container">
         <Link to="/blog" className="back-link">
-          <ArrowLeft size={20} /> Back to Blog
+          <ArrowLeft size={18} />
+          Back to Blog
         </Link>
-        
+
         <article className="blog-post-article">
           <header className="blog-post-header">
-            <span className={`blog-category blog-category--${post.category.toLowerCase()}`}>
-              {post.category}
-            </span>
-            <h1 className="blog-post-title">{post.title}</h1>
-            <div className="blog-meta">
-              <span className="blog-date">{post.date}</span>
-              <span className="blog-dot">•</span>
-              <span className="blog-time"><Clock size={16} /> {post.readTime}</span>
+            <div className="blog-post-meta-row">
+              <span className={`blog-category blog-category--${post.category.toLowerCase()}`}>
+                <Tag size={12} />
+                {post.category}
+              </span>
+              <div className="blog-meta">
+                <span className="blog-date">{post.date}</span>
+                <span className="blog-dot">·</span>
+                <span className="blog-time"><Clock size={14} /> {post.readTime}</span>
+              </div>
             </div>
+            <h1 className="blog-post-title">{post.title}</h1>
+            <p className="blog-post-excerpt">{post.excerpt}</p>
           </header>
-          
-          <div 
+
+          <div
             className="blog-post-body"
             dangerouslySetInnerHTML={{ __html: post.content }}
           />

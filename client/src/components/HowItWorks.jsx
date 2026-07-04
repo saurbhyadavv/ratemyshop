@@ -14,7 +14,7 @@ const steps = [
     icon: Star,
     title: 'Read Reviews',
     description:
-      'See what other customers think about the shop — ratings, experiences, and tips',
+      'See what other customers think about the shop - ratings, experiences, and tips',
     step: 2,
   },
   {

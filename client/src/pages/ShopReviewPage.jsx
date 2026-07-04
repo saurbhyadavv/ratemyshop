@@ -1,12 +1,39 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Store, MapPin, Send, CheckCircle, Navigation, Loader } from 'lucide-react';
+import {
+  ArrowLeft, Store, MapPin, Send, CheckCircle, Navigation,
+  Loader, QrCode, Pencil, LogIn,
+  Check, X, AlertCircle,
+} from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { resolveHash } from '../lib/upiHash';
+import { useAuth } from '../context/AuthContext';
 import StarRating from '../components/StarRating';
 import ReviewCard from '../components/ReviewCard';
 import RatingDistribution from '../components/RatingDistribution';
+import OwnerQrModal from '../components/OwnerQrModal';
+import AuthModal from '../components/AuthModal';
 import './ShopReviewPage.css';
+
+/* ── Shop type definitions ────────────────────────── */
+export const SHOP_TYPES = [
+  { value: 'kirana', label: 'Kirana / General Store' },
+  { value: 'food_stall', label: 'Food Stall / Dhaba' },
+  { value: 'restaurant', label: 'Restaurant / Cafe' },
+  { value: 'pharmacy', label: 'Pharmacy / Medical' },
+  { value: 'salon_barbershop', label: 'Salon / Barbershop' },
+  { value: 'electronics', label: 'Electronics Shop' },
+  { value: 'mobile_repair', label: 'Mobile Repair' },
+  { value: 'clothing', label: 'Clothing / Garments' },
+  { value: 'fruits_vegetables', label: 'Fruits & Vegetables' },
+  { value: 'dairy_eggs', label: 'Dairy & Eggs' },
+  { value: 'bakery', label: 'Bakery / Sweets' },
+  { value: 'hardware', label: 'Hardware / Tools' },
+  { value: 'stationery', label: 'Stationery / Books' },
+  { value: 'auto_parts', label: 'Auto Parts / Garage' },
+  { value: 'general', label: 'Other' },
+];
 
 function getShopName(upiId) {
   const decoded = decodeURIComponent(upiId);
@@ -14,59 +41,121 @@ function getShopName(upiId) {
   return name.charAt(0).toUpperCase() + name.slice(1).replace(/[._-]/g, ' ');
 }
 
-/* ── Empty State Illustration ────────────────────── */
+/* ── Inline star renderer ─────────────────────────── */
+const STAR_PATH = 'M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z';
+
+function InlineStars({ rating, size = 16 }) {
+  return (
+    <div className="review-stars">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <svg key={star} width={size} height={size} viewBox="0 0 24 24"
+          fill={star <= rating ? '#F9A825' : '#E2E8F0'}
+          stroke={star <= rating ? '#F57F17' : '#CBD5E1'}
+          strokeWidth="1.5" strokeLinejoin="round">
+          <path d={STAR_PATH} />
+        </svg>
+      ))}
+    </div>
+  );
+}
+
+/* ── Empty state SVG ──────────────────────────────── */
 function EmptyStateIllustration() {
   return (
     <svg width="200" height="160" viewBox="0 0 200 160" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      {/* Shop silhouette */}
       <rect x="40" y="60" width="120" height="80" rx="8" fill="#FFF3E8" stroke="#FFE0CC" strokeWidth="2" />
       <rect x="40" y="52" width="120" height="12" rx="4" fill="#FF6B2B" opacity="0.15" />
       <path d="M36 52 L100 20 L164 52" stroke="#FF6B2B" strokeWidth="2.5" fill="none" opacity="0.3" />
-      {/* Awning stripes */}
       <rect x="44" y="52" width="14" height="10" rx="2" fill="#FF6B2B" opacity="0.12" />
       <rect x="62" y="52" width="14" height="10" rx="2" fill="#F9A825" opacity="0.12" />
       <rect x="80" y="52" width="14" height="10" rx="2" fill="#C62828" opacity="0.12" />
       <rect x="98" y="52" width="14" height="10" rx="2" fill="#00897B" opacity="0.12" />
       <rect x="116" y="52" width="14" height="10" rx="2" fill="#1565C0" opacity="0.12" />
-      <rect x="134" y="52" width="14" height="10" rx="2" fill="#FF6B2B" opacity="0.12" />
-      {/* Door */}
       <rect x="82" y="95" width="36" height="45" rx="4" fill="#FFE0CC" stroke="#FF6B2B" strokeWidth="1.5" opacity="0.5" />
       <circle cx="112" cy="118" r="3" fill="#F9A825" opacity="0.6" />
-      {/* Windows */}
       <rect x="50" y="72" width="24" height="18" rx="3" fill="#E8F5E9" stroke="#00897B" strokeWidth="1" opacity="0.4" />
       <rect x="126" y="72" width="24" height="18" rx="3" fill="#E3F2FD" stroke="#1565C0" strokeWidth="1" opacity="0.4" />
-      {/* Stars floating */}
-      <g opacity="0.35">
-        <path d="M28 45 l2 4 4.5 0.7 -3.2 3.2 0.8 4.5 -4-2.1 -4 2.1 0.8-4.5 -3.2-3.2 4.5-0.7Z" fill="#F9A825" />
-        <path d="M170 35 l1.5 3 3.4 0.5 -2.4 2.4 0.6 3.4 -3-1.6 -3 1.6 0.6-3.4 -2.4-2.4 3.4-0.5Z" fill="#FF6B2B" />
-        <path d="M22 90 l1 2 2.3 0.3 -1.6 1.6 0.4 2.3 -2-1.1 -2 1.1 0.4-2.3 -1.6-1.6 2.3-0.3Z" fill="#00897B" />
-        <path d="M178 80 l1 2 2.3 0.3 -1.6 1.6 0.4 2.3 -2-1.1 -2 1.1 0.4-2.3 -1.6-1.6 2.3-0.3Z" fill="#C62828" />
-      </g>
-      {/* Madhubani dots */}
-      <circle cx="30" cy="70" r="2" fill="#F9A825" opacity="0.2" />
-      <circle cx="172" cy="60" r="2" fill="#C62828" opacity="0.2" />
-      <circle cx="15" cy="110" r="1.5" fill="#00897B" opacity="0.2" />
-      <circle cx="185" cy="100" r="1.5" fill="#FF6B2B" opacity="0.2" />
-      {/* Question marks */}
-      <text x="66" y="88" fontSize="14" fill="#FF6B2B" opacity="0.3" fontFamily="Outfit, sans-serif" fontWeight="700">?</text>
-      <text x="140" y="88" fontSize="14" fill="#00897B" opacity="0.3" fontFamily="Outfit, sans-serif" fontWeight="700">?</text>
     </svg>
   );
 }
 
-/* ── Page Variants ───────────────────────────────── */
+/* ── Pill toggle ──────────────────────────────────── */
+function TriToggle({ value, onChange, options }) {
+  return (
+    <div className="tri-toggle">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          className={`tri-toggle__btn ${value === opt.value ? 'tri-toggle__btn--active' : ''}`}
+          onClick={() => onChange(opt.value)}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ── Price range picker ──────────────────────────── */
+const PRICE_LABELS = ['Budget', 'Moderate', 'Pricey', 'Premium'];
+function PriceRangePicker({ value, onChange }) {
+  return (
+    <div className="price-range-picker">
+      {[1, 2, 3, 4].map((n) => (
+        <button
+          key={n}
+          type="button"
+          className={`price-btn ${value === n ? 'price-btn--active' : ''}`}
+          onClick={() => onChange(n)}
+          title={PRICE_LABELS[n - 1]}
+        >
+          {'₹'.repeat(n)}
+        </button>
+      ))}
+      {value > 0 && <span className="price-label">{PRICE_LABELS[value - 1]}</span>}
+    </div>
+  );
+}
+
+/* ── 1–5 sub-rating ──────────────────────────────── */
+function SubRating({ value, onChange, label }) {
+  return (
+    <div className="sub-rating">
+      <span className="sub-rating__label">{label}</span>
+      <div className="sub-rating__stars">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button
+            key={n}
+            type="button"
+            className={`sub-star ${value >= n ? 'sub-star--on' : ''}`}
+            onClick={() => onChange(n)}
+            aria-label={`${n} star`}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24"
+              fill={value >= n ? '#F9A825' : '#E2E8F0'}
+              stroke={value >= n ? '#F57F17' : '#CBD5E1'}
+              strokeWidth="1.5">
+              <path d={STAR_PATH} />
+            </svg>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Page variants ────────────────────────────────── */
 const pageVariants = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
   exit: { opacity: 0, y: -20, transition: { duration: 0.25 } },
 };
-
 const cardEntrance = {
   initial: { opacity: 0, y: 30 },
   animate: { opacity: 1, y: 0, transition: { duration: 0.5, delay: 0.15 } },
 };
 
-/* ── Sort helpers ─────────────────────────────────── */
 const SORT_OPTIONS = [
   { value: 'recent', label: 'Most Recent' },
   { value: 'helpful', label: 'Most Helpful' },
@@ -77,123 +166,167 @@ const SORT_OPTIONS = [
 function sortReviews(reviews, sortBy) {
   const sorted = [...reviews];
   switch (sortBy) {
-    case 'helpful':
-      return sorted.sort((a, b) => b.helpful - a.helpful);
-    case 'highest':
-      return sorted.sort((a, b) => b.rating - a.rating);
-    case 'lowest':
-      return sorted.sort((a, b) => a.rating - b.rating);
-    case 'recent':
-    default:
-      return sorted;
+    case 'helpful': return sorted.sort((a, b) => b.helpful - a.helpful);
+    case 'highest': return sorted.sort((a, b) => b.rating - a.rating);
+    case 'lowest': return sorted.sort((a, b) => a.rating - b.rating);
+    default: return sorted;
   }
-}
-
-/* ── Star SVG path for inline star rendering ──────── */
-const STAR_PATH =
-  'M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z';
-
-function InlineStars({ rating, size = 16 }) {
-  return (
-    <div className="review-stars">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <svg
-          key={star}
-          width={size}
-          height={size}
-          viewBox="0 0 24 24"
-          fill={star <= rating ? '#F9A825' : '#E2E8F0'}
-          stroke={star <= rating ? '#F57F17' : '#CBD5E1'}
-          strokeWidth="1.5"
-          strokeLinejoin="round"
-        >
-          <path d={STAR_PATH} />
-        </svg>
-      ))}
-    </div>
-  );
 }
 
 /* ── Main Component ──────────────────────────────── */
 export default function ShopReviewPage() {
-  const { upiId } = useParams();
+  const { shopHash } = useParams();
   const navigate = useNavigate();
-  const decodedUpiId = decodeURIComponent(upiId).toLowerCase();
-  const shopName = getShopName(upiId);
+  const { user, displayName } = useAuth();
 
+  const [decodedUpiId, setDecodedUpiId] = useState(null);
+  const [resolvingError, setResolvingError] = useState(false);
+
+  /* ── State ─────────────────────────────────────── */
+  const [ownerModalOpen, setOwnerModalOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [loadingReviews, setLoadingReviews] = useState(true);
-  const hasReviews = reviews.length > 0;
-  
   const [sortBy, setSortBy] = useState('recent');
+
+  /* Shop info from community suggestions */
+  const [shopDisplayName, setShopDisplayName] = useState('');
+  const [shopType, setShopType] = useState('general');
+  const [isEditingShopInfo, setIsEditingShopInfo] = useState(false);
+  const [suggestName, setSuggestName] = useState('');
+  const [suggestType, setSuggestType] = useState('');
+  const [suggestSubmitting, setSuggestSubmitting] = useState(false);
+  const [suggestDone, setSuggestDone] = useState(false);
+
+  /* Review form */
   const [newRating, setNewRating] = useState(0);
   const [newReviewText, setNewReviewText] = useState('');
+  const [postAnonymously, setPostAnonymously] = useState(true);
   const [locationText, setLocationText] = useState('');
   const [locating, setLocating] = useState(false);
-  const [showToast, setShowToast] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
-  /* Fetch reviews from Supabase */
+  /* Structured data fields */
+  const [isOpen, setIsOpen] = useState(null);        // boolean
+  const [priceRange, setPriceRange] = useState(0);   // 1-4
+  const [isHygienic, setIsHygienic] = useState(null);
+  const [staffBehaviour, setStaffBehaviour] = useState(0);  // 1-5
+  const [waitTime, setWaitTime] = useState('');       // 'short'|'medium'|'long'
+  const [acceptsUpi, setAcceptsUpi] = useState(true);
+  const [acceptsCash, setAcceptsCash] = useState(null);
+  const [wouldRecommend, setWouldRecommend] = useState(null);
+  const [visitType, setVisitType] = useState('');    // 'first'|'occasional'|'regular'
+  // Food/restaurant
+  const [foodQuality, setFoodQuality] = useState(0);
+  const [foodTaste, setFoodTaste] = useState(0);
+  const [foodSpice, setFoodSpice] = useState('');
+  // Kirana
+  const [inventoryLevel, setInventoryLevel] = useState('');
+  const [freshness, setFreshness] = useState(0);
+  const [discountAvailable, setDiscountAvailable] = useState(null);
+  // Pharmacy
+  const [medicineAvailability, setMedicineAvailability] = useState('');
+  // Salon
+  const [skillLevel, setSkillLevel] = useState(0);
+  const [appointmentNeeded, setAppointmentNeeded] = useState(null);
+  // Electronics/Repair
+  const [repairQuality, setRepairQuality] = useState(0);
+  const [warrantyGiven, setWarrantyGiven] = useState(null);
+
+  const hasReviews = reviews.length > 0;
+
+  const isFood = ['food_stall', 'restaurant', 'bakery'].includes(shopType);
+  const isKirana = ['kirana', 'fruits_vegetables', 'dairy_eggs'].includes(shopType);
+  const isPharmacy = shopType === 'pharmacy';
+  const isSalon = shopType === 'salon_barbershop';
+  const isElectronics = ['electronics', 'mobile_repair'].includes(shopType);
+
+  /* ── Resolve Hash ──────────────────────────────── */
   useEffect(() => {
+    async function resolve() {
+      if (!shopHash) return;
+      if (shopHash.includes('@')) {
+        const raw = decodeURIComponent(shopHash).toLowerCase();
+        setDecodedUpiId(raw);
+        setShopDisplayName(getShopName(raw));
+        return;
+      }
+      const resolved = await resolveHash(shopHash);
+      if (resolved) {
+        setDecodedUpiId(resolved);
+        setShopDisplayName(getShopName(resolved));
+      } else {
+        setResolvingError(true);
+      }
+    }
+    resolve();
+  }, [shopHash]);
+
+  /* ── Fetch reviews + shop info ─────────────────── */
+  useEffect(() => {
+    if (!decodedUpiId) return;
     let isMounted = true;
-    const fetchReviews = async () => {
+
+    const fetchAll = async () => {
       setLoadingReviews(true);
       try {
-        const { data, error } = await supabase
+        // Fetch reviews
+        const { data: reviewData } = await supabase
           .from('reviews')
           .select('*')
           .eq('shop_id', decodedUpiId)
           .order('created_at', { ascending: false });
 
-        if (error) throw error;
-
-        const fetchedReviews = (data || []).map(row => {
-          let dateStr = 'Just now';
-          if (row.created_at) {
-            dateStr = new Date(row.created_at).toLocaleDateString('en-IN', {
-              year: 'numeric', month: 'short', day: 'numeric'
-            });
-          }
-          return {
+        if (isMounted) {
+          setReviews((reviewData || []).map((row) => ({
             id: row.id,
-            author: row.author,
+            author: row.author || 'Anonymous',
             rating: row.rating,
             text: row.text,
-            helpful: row.helpful,
-            date: dateStr
-          };
-        });
-        if (isMounted) setReviews(fetchedReviews);
-      } catch (error) {
-        console.error("Error fetching reviews:", error);
+            helpful: row.helpful || 0,
+            date: row.created_at
+              ? new Date(row.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })
+              : 'Just now',
+          })));
+        }
+
+        // Fetch community shop info (most voted)
+        const { data: suggData } = await supabase
+          .from('shop_suggestions')
+          .select('suggested_name, suggested_type, votes')
+          .eq('shop_id', decodedUpiId)
+          .order('votes', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (isMounted && suggData) {
+          if (suggData.suggested_name) setShopDisplayName(suggData.suggested_name);
+          if (suggData.suggested_type) setShopType(suggData.suggested_type);
+        }
+      } catch (err) {
+        console.error('Fetch error:', err);
       } finally {
         if (isMounted) setLoadingReviews(false);
       }
     };
-    fetchReviews();
+
+    fetchAll();
     return () => { isMounted = false; };
   }, [decodedUpiId]);
 
-  /* One-click geolocation */
+  /* ── Geolocation ────────────────────────────────── */
   const handleDetectLocation = useCallback(() => {
-    if (!navigator.geolocation) {
-      setLocationText('Location not supported');
-      return;
-    }
+    if (!navigator.geolocation) { setLocationText('Not supported'); return; }
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         try {
           const { latitude, longitude } = pos.coords;
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
-          );
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
           const data = await res.json();
           const addr = data.address || {};
-          const parts = [
-            addr.suburb || addr.neighbourhood || addr.village || '',
-            addr.city || addr.town || addr.state_district || '',
-          ].filter(Boolean);
+          const parts = [addr.suburb || addr.neighbourhood || addr.village || '', addr.city || addr.town || addr.state_district || ''].filter(Boolean);
           setLocationText(parts.join(', ') || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
         } catch {
           const { latitude, longitude } = pos.coords;
@@ -201,119 +334,170 @@ export default function ShopReviewPage() {
         }
         setLocating(false);
       },
-      () => {
-        setLocationText('');
-        setLocating(false);
-      },
+      () => { setLocationText(''); setLocating(false); },
       { enableHighAccuracy: false, timeout: 8000 }
     );
   }, []);
 
-  const sortedReviews = useMemo(() => sortReviews(reviews, sortBy), [reviews, sortBy]);
-
-  const averageRating = useMemo(() => {
-    if (reviews.length === 0) return 0;
-    return (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1);
-  }, [reviews]);
-
-  /* Rating distribution counts */
-  const ratingCounts = useMemo(() => {
-    const counts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-    reviews.forEach((r) => {
-      const s = Math.round(r.rating);
-      if (s >= 1 && s <= 5) counts[s]++;
-    });
-    return counts;
-  }, [reviews]);
-
-  const maxCount = useMemo(() => Math.max(...Object.values(ratingCounts), 1), [ratingCounts]);
-
-  /* Helpful vote handler */
-  const handleHelpful = useCallback(async (reviewId) => {
+  /* ── Submit suggestion ──────────────────────────── */
+  const handleSuggestSubmit = async (e) => {
+    e?.preventDefault();
+    if (!suggestName.trim() && !suggestType) return;
+    setSuggestSubmitting(true);
     try {
-      // Get current helpful count first, then increment
-      const { data: current } = await supabase
-        .from('reviews')
-        .select('helpful')
-        .eq('id', reviewId)
-        .single();
-
-      await supabase
-        .from('reviews')
-        .update({ helpful: (current?.helpful || 0) + 1 })
-        .eq('id', reviewId);
+      await supabase.from('shop_suggestions').insert({
+        shop_id: decodedUpiId,
+        suggested_name: suggestName.trim() || null,
+        suggested_type: suggestType || null,
+        votes: 1,
+      });
+      if (suggestName.trim()) setShopDisplayName(suggestName.trim());
+      if (suggestType) setShopType(suggestType);
+      setIsEditingShopInfo(false);
+      setSuggestDone(true);
     } catch (err) {
-      console.error('Error updating helpful count:', err);
+      console.error('Suggestion error:', err);
+    } finally {
+      setSuggestSubmitting(false);
     }
-  }, []);
+  };
 
+  /* ── Submit review ──────────────────────────────── */
   const handleSubmitReview = async () => {
     if (newRating === 0 || newReviewText.trim().length < 3) return;
     setSubmitting(true);
 
     try {
-      // 1. Ensure shop exists (upsert)
-      const { error: shopError } = await supabase
-        .from('shops')
-        .upsert(
-          { upi_id: decodedUpiId, name: shopName, category: 'General Store' },
-          { onConflict: 'upi_id' }
-        );
-        
-      if (shopError) throw shopError;
+      // Upsert shop
+      await supabase.from('shops').upsert(
+        { upi_id: decodedUpiId, name: shopDisplayName, category: shopType },
+        { onConflict: 'upi_id' }
+      );
 
-      // 2. Add review
-      const reviewPayload = {
+      const authorName = user
+        ? (postAnonymously ? 'Anonymous' : displayName)
+        : 'Anonymous';
+
+      const payload = {
         shop_id: decodedUpiId,
-        author: 'Anonymous',
+        author: authorName,
         rating: newRating,
-        text: newReviewText.trim() + (locationText ? ` 📍 ${locationText}` : ''),
-        helpful: 0
+        text: newReviewText.trim(),
+        helpful: 0,
+        location: locationText || null,
+        anonymous: !user || postAnonymously,
+        user_id: user?.id || null,
+        shop_type: shopType,
+        is_open: isOpen,
+        price_range: priceRange || null,
+        is_hygienic: isHygienic,
+        staff_behaviour: staffBehaviour || null,
+        wait_time: waitTime || null,
+        accepts_upi: acceptsUpi,
+        accepts_cash: acceptsCash,
+        would_recommend: wouldRecommend,
+        visit_type: visitType || null,
+        // Food
+        food_quality: isFood ? (foodQuality || null) : null,
+        food_taste: isFood ? (foodTaste || null) : null,
+        food_spice: isFood ? (foodSpice || null) : null,
+        // Kirana
+        inventory_level: isKirana ? (inventoryLevel || null) : null,
+        freshness: isKirana ? (freshness || null) : null,
+        discount_available: isKirana ? discountAvailable : null,
+        // Pharmacy
+        medicine_availability: isPharmacy ? (medicineAvailability || null) : null,
+        // Salon
+        skill_level: isSalon ? (skillLevel || null) : null,
+        appointment_needed: isSalon ? appointmentNeeded : null,
+        // Electronics
+        repair_quality: isElectronics ? (repairQuality || null) : null,
+        warranty_given: isElectronics ? warrantyGiven : null,
       };
 
-      const { data: insertedData, error: reviewError } = await supabase
-        .from('reviews')
-        .insert(reviewPayload)
-        .select()
-        .single();
+      const { data: inserted, error } = await supabase
+        .from('reviews').insert(payload).select().single();
+      if (error) throw error;
 
-      if (reviewError) throw reviewError;
+      setReviews([{
+        id: inserted.id,
+        author: inserted.author,
+        rating: inserted.rating,
+        text: inserted.text,
+        helpful: 0,
+        date: 'Just now',
+      }, ...reviews]);
 
-      // 3. Update local state immediately for snappy UI
-      const addedReview = {
-        id: insertedData.id,
-        author: insertedData.author,
-        rating: insertedData.rating,
-        text: insertedData.text,
-        helpful: insertedData.helpful,
-        date: 'Just now'
-      };
+      // Reset form
+      setNewRating(0); setNewReviewText(''); setLocationText('');
+      setIsOpen(null); setPriceRange(0); setIsHygienic(null);
+      setStaffBehaviour(0); setWaitTime(''); setAcceptsCash(null);
+      setWouldRecommend(null); setVisitType('');
+      setFoodQuality(0); setFoodTaste(0); setFoodSpice('');
+      setInventoryLevel(''); setFreshness(0); setDiscountAvailable(null);
+      setMedicineAvailability(''); setSkillLevel(0); setAppointmentNeeded(null);
+      setRepairQuality(0); setWarrantyGiven(null);
 
-      setReviews([addedReview, ...reviews]);
-      setNewRating(0);
-      setNewReviewText('');
-      setLocationText('');
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
     } catch (err) {
-      console.error("Error adding review:", err);
-      alert("Failed to submit review. Please try again later.");
+      console.error('Submit error:', err);
+      alert('Failed to submit review. Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
 
+  /* ── Helpful vote ────────────────────────────────── */
+  const handleHelpful = useCallback(async (reviewId) => {
+    try {
+      const { data: current } = await supabase.from('reviews').select('helpful').eq('id', reviewId).single();
+      await supabase.from('reviews').update({ helpful: (current?.helpful || 0) + 1 }).eq('id', reviewId);
+    } catch (err) {
+      console.error('Helpful error:', err);
+    }
+  }, []);
+
+  const sortedReviews = useMemo(() => sortReviews(reviews, sortBy), [reviews, sortBy]);
+  const averageRating = useMemo(() => {
+    if (!reviews.length) return 0;
+    return (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1);
+  }, [reviews]);
+  const ratingCounts = useMemo(() => {
+    const c = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    reviews.forEach((r) => { const s = Math.round(r.rating); if (s >= 1 && s <= 5) c[s]++; });
+    return c;
+  }, [reviews]);
+  const maxCount = useMemo(() => Math.max(...Object.values(ratingCounts), 1), [ratingCounts]);
   const canSubmit = newRating > 0 && newReviewText.trim().length >= 3;
 
+  const shopTypeLabel = SHOP_TYPES.find((t) => t.value === shopType)?.label || 'Shop';
+
+  if (resolvingError) {
+    return (
+      <div className="empty-state" style={{ marginTop: '10vh' }}>
+        <AlertCircle size={48} color="var(--deep-red)" style={{ marginBottom: '16px' }} />
+        <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-h)', marginBottom: '8px' }}>Shop Not Found</h3>
+        <p style={{ color: 'var(--text)', marginBottom: '24px' }}>This link is invalid or the shop does not exist.</p>
+        <Link to="/" className="btn-primary" style={{ display: 'inline-flex', width: 'auto', padding: '10px 24px' }}>
+          <ArrowLeft size={16} /> Return to Home
+        </Link>
+      </div>
+    );
+  }
+
+  if (!decodedUpiId) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', color: 'var(--text-light)' }}>
+        <Loader size={32} className="spin" />
+      </div>
+    );
+  }
+
   return (
-    <motion.div
-      className="shop-review-page"
-      variants={pageVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-    >
-      {/* ── Back Navigation ─────────────────────────── */}
+    <motion.div className="shop-review-page" variants={pageVariants} initial="initial" animate="animate" exit="exit">
+
+      {/* ── Back Nav ─────────────────────────────── */}
       <nav className="back-nav">
         <Link to="/" className="back-link">
           <ArrowLeft />
@@ -321,41 +505,104 @@ export default function ShopReviewPage() {
         </Link>
       </nav>
 
-      {/* ── Shop Header Card ────────────────────────── */}
+      {/* ── Shop Header ──────────────────────────── */}
       <div className="shop-header">
         <motion.div className="shop-header-card" {...cardEntrance}>
-          {/* Shop image banner */}
           <div className="shop-image-banner">
-            <img src="/shop-placeholder.png" alt={`${shopName}'s Shop`} />
+            <img src="/shop-placeholder.png" alt={`${shopDisplayName} shop`} />
           </div>
 
           <div className="shop-header-content">
-            <div className="shop-avatar">
-              {shopName.charAt(0).toUpperCase()}
-            </div>
+            <div className="shop-avatar">{shopDisplayName.charAt(0).toUpperCase()}</div>
 
             <div className="shop-info">
-              <h1 className="shop-name">{shopName}'s Shop</h1>
-              <p className="shop-category">
-                <Store size={14} />
-                General Store
-              </p>
-              <span className="shop-upi-badge">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="2" y="5" width="20" height="14" rx="2" />
-                  <path d="M2 10h20" />
-                </svg>
-                {decodedUpiId}
-              </span>
+              {/* Inline editable name — Truecaller style */}
+              <AnimatePresence mode="wait">
+                {isEditingShopInfo ? (
+                  <motion.div
+                    key="edit"
+                    className="shop-name-edit-wrap"
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.18 }}
+                  >
+                    <input
+                      className="shop-name-edit-input"
+                      type="text"
+                      value={suggestName}
+                      onChange={(e) => setSuggestName(e.target.value)}
+                      placeholder="Shop name"
+                      maxLength={60}
+                      autoFocus
+                    />
+                    <select
+                      className="shop-type-edit-select"
+                      value={suggestType || shopType}
+                      onChange={(e) => setSuggestType(e.target.value)}
+                    >
+                      {SHOP_TYPES.map((t) => (
+                        <option key={t.value} value={t.value}>{t.label}</option>
+                      ))}
+                    </select>
+                    <div className="shop-name-edit-actions">
+                      <button
+                        className="edit-save-btn"
+                        onClick={handleSuggestSubmit}
+                        disabled={suggestSubmitting}
+                      >
+                        {suggestSubmitting ? <Loader size={13} className="spin" /> : <Check size={13} />}
+                        Save
+                      </button>
+                      <button
+                        className="edit-cancel-btn"
+                        onClick={() => { setIsEditingShopInfo(false); setSuggestName(''); setSuggestType(''); }}
+                      >
+                        <X size={13} />
+                      </button>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="display"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    <div className="shop-name-row">
+                      <h1 className="shop-name">{shopDisplayName}</h1>
+                      <button
+                        className="shop-name-edit-icon"
+                        onClick={() => { setSuggestName(shopDisplayName); setSuggestType(shopType); setIsEditingShopInfo(true); }}
+                        aria-label="Suggest a name correction"
+                        title="Suggest a correction"
+                      >
+                        <Pencil size={13} />
+                      </button>
+                    </div>
+                    <p className="shop-category">
+                      <Store size={14} />
+                      {shopTypeLabel}
+                      {suggestDone && <span className="suggest-done-badge">Updated</span>}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <div className="shop-badges-row">
+                <button className="owner-qr-trigger-btn" onClick={() => setOwnerModalOpen(true)} aria-label="Get printable QR sign">
+                  <QrCode size={13} />
+                  Owner? Get QR Sign
+                </button>
+              </div>
             </div>
 
             <div className="shop-rating-summary">
-              <motion.div
-                className="rating-big-number"
+              <motion.div className="rating-big-number"
                 initial={{ opacity: 0, scale: 0.5 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6, type: 'spring', bounce: 0.3 }}
-              >
+                transition={{ duration: 0.6, type: 'spring', bounce: 0.3 }}>
                 {averageRating}
               </motion.div>
               <div className="rating-stars-row">
@@ -369,22 +616,18 @@ export default function ShopReviewPage() {
         </motion.div>
       </div>
 
-      {/* ── Content Grid: Sidebar + Reviews ─────────── */}
+      {/* ── Content Grid ─────────────────────────── */}
       <div className={`shop-content ${!hasReviews ? 'shop-content--empty' : ''}`}>
-        {/* Rating Distribution Sidebar — only show when there are reviews */}
+
         {hasReviews && (
-          <motion.aside
-            className="rating-distribution-card"
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.25 }}
-          >
+          <motion.aside className="rating-distribution-card"
+            initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.25 }}>
             <h3 className="rating-dist-title">Rating Breakdown</h3>
             {[5, 4, 3, 2, 1].map((star, i) => {
               const count = ratingCounts[star];
               const pct = reviews.length > 0 ? Math.round((count / reviews.length) * 100) : 0;
               const widthPct = maxCount > 0 ? (count / maxCount) * 100 : 0;
-
               return (
                 <div className="rating-bar-row" key={star}>
                   <span className="rating-bar-label">
@@ -394,13 +637,10 @@ export default function ShopReviewPage() {
                     </svg>
                   </span>
                   <div className="rating-bar-track">
-                    <motion.div
-                      className="rating-bar-fill"
-                      data-rating={star}
+                    <motion.div className="rating-bar-fill" data-rating={star}
                       initial={{ width: 0 }}
                       animate={{ width: `${widthPct}%` }}
-                      transition={{ duration: 0.8, delay: 0.3 + i * 0.08, ease: [0.22, 1, 0.36, 1] }}
-                    />
+                      transition={{ duration: 0.8, delay: 0.3 + i * 0.08, ease: [0.22, 1, 0.36, 1] }} />
                   </div>
                   <span className="rating-bar-count">{pct}%</span>
                 </div>
@@ -409,179 +649,335 @@ export default function ShopReviewPage() {
           </motion.aside>
         )}
 
-        {/* Reviews + Add Review */}
         <div className="reviews-section">
-          {/* Header with sort — only show sort when reviews exist */}
           <div className="reviews-header">
             <h2 className="reviews-title">Customer Reviews</h2>
             {hasReviews && (
-              <select
-                className="reviews-sort"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-              >
+              <select className="reviews-sort" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
                 {SORT_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
             )}
           </div>
 
-          {/* Review Cards or Empty State */}
           {loadingReviews ? (
             <div style={{ textAlign: 'center', padding: '3rem 0', color: '#888' }}>
               <Loader size={32} className="spin" style={{ margin: '0 auto 1rem', display: 'block', color: '#00897B' }} />
-              <p>Loading reviews...</p>
+              <p>Loading reviews…</p>
             </div>
           ) : sortedReviews.length > 0 ? (
             sortedReviews.map((review) => (
               <ReviewCard key={review.id} review={review} onHelpful={handleHelpful} />
             ))
           ) : (
-            <motion.div
-              className="empty-state"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <div className="empty-state__illustration">
-                <EmptyStateIllustration />
-              </div>
-
+            <motion.div className="empty-state"
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}>
+              <div className="empty-state__illustration"><EmptyStateIllustration /></div>
               <h3 className="empty-state__title">No Reviews Yet</h3>
               <p className="empty-state__subtitle">
-                This shop hasn't been reviewed by anyone yet.<br />
-                Be the pioneer — your review helps build trust for local businesses!
+                Be the first to review this shop and help your community make better choices.
               </p>
-
-              <div className="empty-state__features">
-                <div className="empty-state__feature">
-                  <span className="empty-state__feature-icon">⭐</span>
-                  <span>Rate your experience</span>
-                </div>
-                <div className="empty-state__feature">
-                  <span className="empty-state__feature-icon">✍️</span>
-                  <span>Share what you liked</span>
-                </div>
-                <div className="empty-state__feature">
-                  <span className="empty-state__feature-icon">🤝</span>
-                  <span>Help the community</span>
-                </div>
-              </div>
-
-              <motion.button
-                className="empty-state__cta"
-                onClick={() => {
-                  const el = document.getElementById('add-review-section');
-                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }}
-                whileHover={{ scale: 1.04, boxShadow: '0 8px 28px rgba(255,107,43,0.35)' }}
-                whileTap={{ scale: 0.97 }}
-              >
+              <motion.button className="empty-state__cta"
+                onClick={() => document.getElementById('add-review-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
                 <Send size={18} />
                 Write the First Review
               </motion.button>
             </motion.div>
           )}
 
-          {/* ── Add Review Form ─────────────────────── */}
-          <motion.div
-            id="add-review-section"
-            className="add-review-card"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.5 }}
-          >
+          {/* ── Add Review ─────────────────────────── */}
+          <motion.div id="add-review-section" className="add-review-card"
+            initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-40px' }} transition={{ duration: 0.5 }}>
+
             <h3 className="add-review-title">Write a Review</h3>
-            <p className="add-review-subtitle">
-              Share your experience to help others make better decisions
-            </p>
+            <p className="add-review-subtitle">Share your experience at {shopDisplayName}</p>
 
-            {/* Star Rating */}
-            <div className="form-group">
-              <label className="form-label">Your Rating</label>
-              <StarRating rating={newRating} onRate={setNewRating} size={32} />
-            </div>
-
-            {/* Review Text */}
-            <div className="form-group">
-              <label className="form-label">Your Review</label>
-              <textarea
-                className="review-textarea"
-                placeholder="Tell others about your experience at this shop..."
-                value={newReviewText}
-                onChange={(e) => setNewReviewText(e.target.value)}
-                rows={4}
-              />
-            </div>
-
-            {/* Location — easy one-click + manual */}
-            <div className="form-group">
-              <label className="form-label">
-                <MapPin size={14} style={{ display: 'inline', verticalAlign: '-2px', marginRight: 4 }} />
-                Location <span style={{ color: '#aaa', fontWeight: 400 }}>(optional)</span>
-              </label>
-              <div className="location-row">
-                <button
-                  type="button"
-                  className="location-detect-btn"
-                  onClick={handleDetectLocation}
-                  disabled={locating}
-                >
-                  {locating ? (
-                    <><Loader size={15} className="spin" /> Detecting...</>
-                  ) : (
-                    <><Navigation size={15} /> Use My Location</>
-                  )}
+            {/* Auth gate */}
+            {!user && (
+              <div className="auth-gate">
+                <LogIn size={20} />
+                <div>
+                  <strong>Sign in to post a review</strong>
+                  <p>Your review helps the community. You can still post anonymously after signing in.</p>
+                </div>
+                <button className="auth-gate-btn" onClick={() => setAuthModalOpen(true)}>
+                  Sign in
                 </button>
-                <input
-                  className="location-input"
-                  type="text"
-                  placeholder="or type: Sector 22, Chandigarh"
-                  value={locationText}
-                  onChange={(e) => setLocationText(e.target.value)}
+              </div>
+            )}
+
+            <fieldset className="review-form-fields" disabled={!user}>
+              {/* Overall star rating */}
+              <div className="form-group">
+                <label className="form-label">Overall Rating</label>
+                <StarRating rating={newRating} onRate={setNewRating} size={32} />
+              </div>
+
+              {/* Quick facts row */}
+              <div className="form-group">
+                <label className="form-label">Quick Facts</label>
+                <div className="quick-facts-grid">
+                  <div className="quick-fact">
+                    <span className="qf-label">Shop open?</span>
+                    <TriToggle value={isOpen === null ? '' : String(isOpen)}
+                      onChange={(v) => setIsOpen(v === '' ? null : v === 'true')}
+                      options={[{ value: 'true', label: 'Open' }, { value: 'false', label: 'Closed' }]} />
+                  </div>
+                  <div className="quick-fact">
+                    <span className="qf-label">Hygienic?</span>
+                    <TriToggle value={isHygienic === null ? '' : String(isHygienic)}
+                      onChange={(v) => setIsHygienic(v === '' ? null : v === 'true')}
+                      options={[{ value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }]} />
+                  </div>
+                  <div className="quick-fact">
+                    <span className="qf-label">Would recommend?</span>
+                    <TriToggle value={wouldRecommend === null ? '' : String(wouldRecommend)}
+                      onChange={(v) => setWouldRecommend(v === '' ? null : v === 'true')}
+                      options={[{ value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }]} />
+                  </div>
+                  <div className="quick-fact">
+                    <span className="qf-label">Accepts UPI?</span>
+                    <TriToggle value={String(acceptsUpi)}
+                      onChange={(v) => setAcceptsUpi(v === 'true')}
+                      options={[{ value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }]} />
+                  </div>
+                  <div className="quick-fact">
+                    <span className="qf-label">Accepts Cash?</span>
+                    <TriToggle value={acceptsCash === null ? '' : String(acceptsCash)}
+                      onChange={(v) => setAcceptsCash(v === '' ? null : v === 'true')}
+                      options={[{ value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }]} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Price range */}
+              <div className="form-group">
+                <label className="form-label">Price Range</label>
+                <PriceRangePicker value={priceRange} onChange={setPriceRange} />
+              </div>
+
+              {/* Sub-ratings */}
+              <div className="form-group">
+                <label className="form-label">Service Quality</label>
+                <div className="sub-ratings-stack">
+                  <SubRating value={staffBehaviour} onChange={setStaffBehaviour} label="Staff behaviour" />
+                  <div className="quick-fact" style={{ marginTop: 8 }}>
+                    <span className="qf-label">Wait time</span>
+                    <TriToggle value={waitTime}
+                      onChange={setWaitTime}
+                      options={[
+                        { value: 'short', label: 'Short' },
+                        { value: 'medium', label: 'Medium' },
+                        { value: 'long', label: 'Long' },
+                      ]} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Food-specific */}
+              {isFood && (
+                <div className="form-group form-group--contextual">
+                  <label className="form-label form-label--context">
+                    Food Details
+                    <span className="context-badge">{shopTypeLabel}</span>
+                  </label>
+                  <div className="sub-ratings-stack">
+                    <SubRating value={foodQuality} onChange={setFoodQuality} label="Food quality" />
+                    <SubRating value={foodTaste} onChange={setFoodTaste} label="Taste" />
+                    <div className="quick-fact" style={{ marginTop: 8 }}>
+                      <span className="qf-label">Spice level</span>
+                      <TriToggle value={foodSpice} onChange={setFoodSpice}
+                        options={[
+                          { value: 'mild', label: 'Mild' },
+                          { value: 'medium', label: 'Medium' },
+                          { value: 'spicy', label: 'Spicy' },
+                        ]} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Kirana-specific */}
+              {isKirana && (
+                <div className="form-group form-group--contextual">
+                  <label className="form-label form-label--context">
+                    Stock Details
+                    <span className="context-badge">{shopTypeLabel}</span>
+                  </label>
+                  <div className="sub-ratings-stack">
+                    <div className="quick-fact">
+                      <span className="qf-label">Stock level</span>
+                      <TriToggle value={inventoryLevel} onChange={setInventoryLevel}
+                        options={[
+                          { value: 'low', label: 'Low' },
+                          { value: 'medium', label: 'Good' },
+                          { value: 'high', label: 'Excellent' },
+                        ]} />
+                    </div>
+                    <SubRating value={freshness} onChange={setFreshness} label="Product freshness" />
+                    <div className="quick-fact" style={{ marginTop: 8 }}>
+                      <span className="qf-label">Discounts available?</span>
+                      <TriToggle value={discountAvailable === null ? '' : String(discountAvailable)}
+                        onChange={(v) => setDiscountAvailable(v === '' ? null : v === 'true')}
+                        options={[{ value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }]} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Pharmacy-specific */}
+              {isPharmacy && (
+                <div className="form-group form-group--contextual">
+                  <label className="form-label form-label--context">
+                    Medicine Availability
+                    <span className="context-badge">Pharmacy</span>
+                  </label>
+                  <TriToggle value={medicineAvailability} onChange={setMedicineAvailability}
+                    options={[
+                      { value: 'poor', label: 'Poor' },
+                      { value: 'average', label: 'Average' },
+                      { value: 'good', label: 'Good' },
+                    ]} />
+                </div>
+              )}
+
+              {/* Salon-specific */}
+              {isSalon && (
+                <div className="form-group form-group--contextual">
+                  <label className="form-label form-label--context">
+                    Salon Details
+                    <span className="context-badge">Salon</span>
+                  </label>
+                  <div className="sub-ratings-stack">
+                    <SubRating value={skillLevel} onChange={setSkillLevel} label="Skill level" />
+                    <div className="quick-fact" style={{ marginTop: 8 }}>
+                      <span className="qf-label">Appointment needed?</span>
+                      <TriToggle value={appointmentNeeded === null ? '' : String(appointmentNeeded)}
+                        onChange={(v) => setAppointmentNeeded(v === '' ? null : v === 'true')}
+                        options={[{ value: 'true', label: 'Yes' }, { value: 'false', label: 'Walk-in' }]} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Electronics-specific */}
+              {isElectronics && (
+                <div className="form-group form-group--contextual">
+                  <label className="form-label form-label--context">
+                    Repair Details
+                    <span className="context-badge">{shopTypeLabel}</span>
+                  </label>
+                  <div className="sub-ratings-stack">
+                    <SubRating value={repairQuality} onChange={setRepairQuality} label="Repair quality" />
+                    <div className="quick-fact" style={{ marginTop: 8 }}>
+                      <span className="qf-label">Warranty given?</span>
+                      <TriToggle value={warrantyGiven === null ? '' : String(warrantyGiven)}
+                        onChange={(v) => setWarrantyGiven(v === '' ? null : v === 'true')}
+                        options={[{ value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }]} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Visit type */}
+              <div className="form-group">
+                <label className="form-label">Visit frequency</label>
+                <TriToggle value={visitType} onChange={setVisitType}
+                  options={[
+                    { value: 'first', label: 'First visit' },
+                    { value: 'occasional', label: 'Occasional' },
+                    { value: 'regular', label: 'Regular' },
+                  ]} />
+              </div>
+
+              {/* Review text */}
+              <div className="form-group">
+                <label className="form-label">Your Review</label>
+                <textarea
+                  className="review-textarea"
+                  placeholder="Tell others about your experience…"
+                  value={newReviewText}
+                  onChange={(e) => setNewReviewText(e.target.value)}
+                  rows={4}
                 />
               </div>
-            </div>
 
-            {/* Submit Button */}
-            <motion.button
-              className="submit-btn"
-              onClick={handleSubmitReview}
-              disabled={!canSubmit || submitting}
-              whileHover={canSubmit && !submitting ? { scale: 1.03 } : {}}
-              whileTap={canSubmit && !submitting ? { scale: 0.97 } : {}}
-            >
-              {submitting ? <Loader size={18} className="spin" /> : <Send size={18} />}
-              {submitting ? 'Submitting...' : 'Submit Review'}
-            </motion.button>
+              {/* Location */}
+              <div className="form-group">
+                <label className="form-label">
+                  <MapPin size={14} style={{ display: 'inline', verticalAlign: '-2px', marginRight: 4 }} />
+                  Location <span style={{ color: '#aaa', fontWeight: 400 }}>(optional)</span>
+                </label>
+                <div className="location-row">
+                  <button type="button" className="location-detect-btn" onClick={handleDetectLocation} disabled={locating}>
+                    {locating ? <><Loader size={15} className="spin" /> Detecting…</> : <><Navigation size={15} /> Use My Location</>}
+                  </button>
+                  <input className="location-input" type="text"
+                    placeholder="or type: Sector 22, Chandigarh"
+                    value={locationText}
+                    onChange={(e) => setLocationText(e.target.value)} />
+                </div>
+              </div>
+
+              {/* Anonymous toggle — only shown when logged in */}
+              {user && (
+                <div className="form-group">
+                  <label className="anon-toggle">
+                    <input
+                      type="checkbox"
+                      checked={postAnonymously}
+                      onChange={(e) => setPostAnonymously(e.target.checked)}
+                    />
+                    <span className="anon-toggle__label">
+                      Post anonymously
+                      <span className="anon-toggle__hint">
+                        {postAnonymously ? 'Review will show as "Anonymous"' : `Review will show as "${displayName}"`}
+                      </span>
+                    </span>
+                  </label>
+                </div>
+              )}
+
+              {/* Submit */}
+              <motion.button
+                className="submit-btn"
+                onClick={handleSubmitReview}
+                disabled={!canSubmit || submitting || !user}
+                whileHover={canSubmit && !submitting && user ? { scale: 1.03 } : {}}
+                whileTap={canSubmit && !submitting && user ? { scale: 0.97 } : {}}
+              >
+                {submitting ? <Loader size={18} className="spin" /> : <Send size={18} />}
+                {submitting ? 'Submitting…' : 'Submit Review'}
+              </motion.button>
+            </fieldset>
           </motion.div>
         </div>
       </div>
 
-      {/* ── Success Toast ─────────────────────────── */}
+      {/* ── Toast ────────────────────────────────── */}
       <AnimatePresence>
         {showToast && (
-          <motion.div
-            className="success-toast"
+          <motion.div className="success-toast"
             initial={{ opacity: 0, y: -20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.9 }}
-            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-          >
-            <div className="success-toast-icon">
-              <CheckCircle />
-            </div>
+            transition={{ type: 'spring', damping: 20, stiffness: 300 }}>
+            <div className="success-toast-icon"><CheckCircle /></div>
             <div className="success-toast-text">
               <strong>Review submitted!</strong>
-              <span>Thank you for helping the community 🎉</span>
+              <span>Thank you for helping the community.</span>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── Modals ───────────────────────────────── */}
+      <OwnerQrModal isOpen={ownerModalOpen} onClose={() => setOwnerModalOpen(false)} upiId={decodedUpiId} shopName={shopDisplayName} />
+      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
     </motion.div>
   );
 }
