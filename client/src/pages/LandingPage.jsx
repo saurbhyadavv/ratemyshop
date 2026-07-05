@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import Hero from '../components/Hero';
 import HowItWorks from '../components/HowItWorks';
 import Features from '../components/Features';
+import Faq from '../components/Faq';
 
 function LandingPage() {
   return (
@@ -14,6 +15,7 @@ function LandingPage() {
       <Hero />
       <HowItWorks />
       <Features />
+      <Faq />
     </motion.div>
   );
 }

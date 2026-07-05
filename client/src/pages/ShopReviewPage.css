@@ -192,40 +192,41 @@
   height: 14px;
 }
 
-.owner-qr-trigger-btn {
+.claim-shop-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.48rem;
-  padding: 0.46rem 1.05rem;
-  background:
-    linear-gradient(#fffaf0, #fffaf0) padding-box,
-    linear-gradient(135deg, #17152f, #E85D25, #B8242F, #0B8176) border-box;
-  border: 1.5px solid transparent;
+  gap: 0.46rem;
+  padding: 0.44rem 1rem;
+  background: rgba(0, 137, 123, 0.06);
+  border: 1.5px solid rgba(0, 137, 123, 0.28);
   border-radius: 100px;
   font-family: 'Outfit', sans-serif;
-  font-size: 0.85rem;
-  color: #17152f;
-  font-weight: 800;
+  font-size: 0.82rem;
+  color: #00897B;
+  font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 7px 18px rgba(184, 36, 47, 0.11);
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, color 0.2s ease;
+  text-decoration: none;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  letter-spacing: 0.1px;
 }
 
-.owner-qr-trigger-btn:hover {
-  color: #B8242F;
-  transform: translateY(-1.5px);
-  box-shadow: 0 10px 24px rgba(184, 36, 47, 0.18);
+.claim-shop-btn:hover {
+  background: rgba(0, 137, 123, 0.12);
+  border-color: rgba(0, 137, 123, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 137, 123, 0.15);
 }
 
-.owner-qr-trigger-btn:active {
+.claim-shop-btn:active {
   transform: translateY(0);
 }
 
-.owner-qr-trigger-btn svg {
-  width: 15px;
-  height: 15px;
-  color: #E85D25;
+.claim-shop-btn svg {
+  width: 14px;
+  height: 14px;
+  color: #00897B;
 }
+
 
 .shop-rating-summary {
   text-align: center;

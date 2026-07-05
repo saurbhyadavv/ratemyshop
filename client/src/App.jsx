@@ -8,6 +8,8 @@ import AboutPage from './pages/AboutPage';
 import BlogPage from './pages/BlogPage';
 import BlogPostPage from './pages/BlogPostPage';
 import FAQPage from './pages/FAQPage';
+import ClaimPage from './pages/ClaimPage';
+import SearchPage from './pages/SearchPage';
 import './index.css';
 
 function AnimatedRoutes() {
@@ -17,6 +19,11 @@ function AnimatedRoutes() {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<LandingPage />} />
         <Route path="/shop/:shopHash" element={<ShopReviewPage />} />
+        <Route path="/claim" element={<ClaimPage />} />
+        <Route path="/claim/:shopHash" element={<ClaimPage />} />
+        <Route path="/search" element={<SearchPage />} />
+        <Route path="/shops/:city" element={<SearchPage />} />
+        <Route path="/shops/:city/:category" element={<SearchPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/blog/:slug" element={<BlogPostPage />} />

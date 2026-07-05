@@ -5,23 +5,23 @@ import './HowItWorks.css';
 const steps = [
   {
     icon: QrCode,
-    title: 'Scan or Enter UPI',
+    title: 'Scan the Shop QR Code',
     description:
-      "Point your camera at the shop's UPI QR code, or simply type their UPI ID",
+      "Point your camera at any QR code at the shop counter - it uniquely identifies the shop. No payment, just a scan.",
     step: 1,
   },
   {
     icon: Star,
-    title: 'Read Reviews',
+    title: 'Read Community Reviews',
     description:
-      'See what other customers think about the shop - ratings, experiences, and tips',
+      'See what local customers think - ratings, hygiene, prices, wait times, and honest experiences.',
     step: 2,
   },
   {
     icon: MessageSquarePlus,
     title: 'Share Your Experience',
     description:
-      'Leave your own review to help the community make better choices',
+      'Leave your own review to help your neighbourhood make better choices. Post with name or anonymously.',
     step: 3,
   },
 ];

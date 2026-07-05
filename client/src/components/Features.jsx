@@ -6,25 +6,25 @@ const features = [
   {
     icon: Zap,
     title: 'No App Needed',
-    desc: 'Works right in your browser. No downloads, no sign-ups, no hassle.',
+    desc: 'Works right in your browser. No downloads, no sign-ups required to browse reviews.',
     color: '#FF6B2B',
   },
   {
     icon: ShieldCheck,
     title: 'Community Driven',
-    desc: 'Real reviews from real customers. Transparent and honest feedback.',
+    desc: 'Real reviews from real customers. Transparent, honest, and hyper-local feedback.',
     color: '#00897B',
   },
   {
     icon: MapPin,
-    title: 'Location Optional',
-    desc: 'Add your location to help nearby shoppers, or keep it private.',
+    title: 'Hyper-Local Discovery',
+    desc: 'Find reviews for shops right in your neighbourhood - not big chains, your local wala.',
     color: '#1565C0',
   },
   {
     icon: IndianRupee,
-    title: 'UPI Powered',
-    desc: "Every shop with a UPI ID can be reviewed. That's millions of shops across India.",
+    title: 'QR as Shop Identity',
+    desc: "Every shop's QR code is its unique address. No payments involved - it's just how we identify each shop.",
     color: '#C62828',
   },
 ];

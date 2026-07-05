@@ -5,7 +5,7 @@ import { Smartphone, Check, AlertCircle, Loader } from 'lucide-react';
 import { getOrCreateHash } from '../lib/upiHash';
 import './UpiInput.css';
 
-function UpiInput() {
+function UpiInput({ redirectTo = '/shop' }) {
   const [upiId, setUpiId] = useState('');
   const [error, setError] = useState('');
   const [valid, setValid] = useState(false);
@@ -52,11 +52,10 @@ function UpiInput() {
     setNavigating(true);
     try {
       const hash = await getOrCreateHash(upiId.trim().toLowerCase());
-      navigate(`/shop/${hash}`);
+      navigate(`${redirectTo}/${hash}`);
     } catch (err) {
       console.error('Hash error:', err);
-      // Fallback: use raw encoded UPI ID so the app stays functional
-      navigate(`/shop/${encodeURIComponent(upiId.trim().toLowerCase())}`);
+      navigate(`${redirectTo}/${encodeURIComponent(upiId.trim().toLowerCase())}`);
     } finally {
       setNavigating(false);
     }

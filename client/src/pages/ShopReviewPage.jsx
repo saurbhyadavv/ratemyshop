@@ -5,7 +5,7 @@ import {
   ArrowLeft, Store, MapPin, Send, CheckCircle, Navigation,
   Loader, QrCode, Pencil, LogIn,
   Check, X, AlertCircle,
-  ThumbsUp, Sparkles, Clock, Coins, Smile, Timer
+  ThumbsUp, Sparkles, Clock, Coins, Smile, Timer, ShieldCheck
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { resolveHash } from '../lib/upiHash';
@@ -208,6 +208,7 @@ export default function ShopReviewPage() {
   const [locating, setLocating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [existingUserReview, setExistingUserReview] = useState(null);
 
   /* Structured data fields */
   const [isOpen, setIsOpen] = useState(null);        // boolean
@@ -290,6 +291,41 @@ export default function ShopReviewPage() {
             helpful: row.helpful || 0,
             date: row.created_at || 'Just now',
           })));
+
+          if (user) {
+            const userReview = reviewData?.find((r) => r.user_id === user.id);
+            if (userReview) {
+              setExistingUserReview(userReview);
+              setNewRating(userReview.rating || 0);
+              setNewReviewText(userReview.text || '');
+              setPostAnonymously(userReview.anonymous ?? true);
+              setLocationText(userReview.location || '');
+              setIsOpen(userReview.is_open);
+              setPriceRange(userReview.price_range || 0);
+              setIsHygienic(userReview.is_hygienic);
+              setStaffBehaviour(userReview.staff_behaviour || 0);
+              setWaitTime(userReview.wait_time || '');
+              setAcceptsUpi(userReview.accepts_upi ?? true);
+              setAcceptsCash(userReview.accepts_cash);
+              setWouldRecommend(userReview.would_recommend);
+              setVisitType(userReview.visit_type || '');
+              setFoodQuality(userReview.food_quality || 0);
+              setFoodTaste(userReview.food_taste || 0);
+              setFoodSpice(userReview.food_spice || '');
+              setInventoryLevel(userReview.inventory_level || '');
+              setFreshness(userReview.freshness || 0);
+              setDiscountAvailable(userReview.discount_available);
+              setMedicineAvailability(userReview.medicine_availability || '');
+              setSkillLevel(userReview.skill_level || 0);
+              setAppointmentNeeded(userReview.appointment_needed);
+              setRepairQuality(userReview.repair_quality || 0);
+              setWarrantyGiven(userReview.warranty_given);
+            } else {
+              setExistingUserReview(null);
+            }
+          } else {
+            setExistingUserReview(null);
+          }
         }
 
         // Fetch shop details from the shops table
@@ -458,29 +494,58 @@ export default function ShopReviewPage() {
         warranty_given: isElectronics ? warrantyGiven : null,
       };
 
-      const { data: inserted, error } = await supabase
-        .from('reviews').insert(payload).select().single();
-      if (error) throw error;
+      if (existingUserReview) {
+        // Update existing review
+        const { data: updated, error } = await supabase
+          .from('reviews')
+          .update({
+            ...payload,
+            helpful: existingUserReview.helpful // keep current helpful count
+          })
+          .eq('id', existingUserReview.id)
+          .select()
+          .single();
+        if (error) throw error;
 
-      setReviews([{
-        ...inserted,
-        id: inserted.id,
-        author: inserted.author,
-        rating: inserted.rating,
-        text: inserted.text,
-        helpful: 0,
-        date: 'Just now',
-      }, ...reviews]);
+        setReviews((prev) =>
+          prev.map((r) =>
+            r.id === updated.id
+              ? {
+                  ...updated,
+                  id: updated.id,
+                  author: updated.author,
+                  rating: updated.rating,
+                  text: updated.text,
+                  helpful: r.helpful,
+                  date: 'Just updated',
+                }
+              : r
+          )
+        );
+        setExistingUserReview(updated);
+      } else {
+        // Insert new review
+        const { data: inserted, error } = await supabase
+          .from('reviews')
+          .insert(payload)
+          .select()
+          .single();
+        if (error) throw error;
 
-      // Reset form
-      setNewRating(0); setNewReviewText(''); setLocationText('');
-      setIsOpen(null); setPriceRange(0); setIsHygienic(null);
-      setStaffBehaviour(0); setWaitTime(''); setAcceptsCash(null);
-      setWouldRecommend(null); setVisitType('');
-      setFoodQuality(0); setFoodTaste(0); setFoodSpice('');
-      setInventoryLevel(''); setFreshness(0); setDiscountAvailable(null);
-      setMedicineAvailability(''); setSkillLevel(0); setAppointmentNeeded(null);
-      setRepairQuality(0); setWarrantyGiven(null);
+        setReviews([
+          {
+            ...inserted,
+            id: inserted.id,
+            author: inserted.author,
+            rating: inserted.rating,
+            text: inserted.text,
+            helpful: 0,
+            date: 'Just now',
+          },
+          ...reviews,
+        ]);
+        setExistingUserReview(inserted);
+      }
 
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
@@ -938,10 +1003,14 @@ export default function ShopReviewPage() {
               </AnimatePresence>
 
               <div className="shop-badges-row">
-                <button className="owner-qr-trigger-btn" onClick={() => setOwnerModalOpen(true)} aria-label="Get printable QR sign">
-                  <QrCode size={13} />
-                  Owner? Get QR Sign
-                </button>
+                <Link
+                  to={`/claim/${shopHash}`}
+                  className="claim-shop-btn"
+                  aria-label="Claim this shop as owner"
+                >
+                  <ShieldCheck size={13} />
+                  Claim this Shop
+                </Link>
               </div>
             </div>
 
@@ -1049,8 +1118,28 @@ export default function ShopReviewPage() {
             initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-40px' }} transition={{ duration: 0.5 }}>
 
-            <h3 className="add-review-title">Write a Review</h3>
-            <p className="add-review-subtitle">Share your experience at {shopDisplayName}</p>
+            <h3 className="add-review-title">{existingUserReview ? 'Edit Your Review' : 'Write a Review'}</h3>
+            <p className="add-review-subtitle">
+              {existingUserReview ? 'Modify your rating and feedback below' : `Share your experience at ${shopDisplayName}`}
+            </p>
+            {existingUserReview && (
+              <div className="review-edit-notice" style={{
+                background: 'rgba(0, 137, 123, 0.05)',
+                border: '1.5px solid rgba(0, 137, 123, 0.25)',
+                borderRadius: '8px',
+                padding: '10px 14px',
+                fontSize: '0.85rem',
+                color: '#00897B',
+                fontWeight: 600,
+                marginBottom: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <ShieldCheck size={16} />
+                <span>You have already reviewed this shop. Editing your previous review.</span>
+              </div>
+            )}
 
             {/* Auth gate */}
             {!user && (
@@ -1307,7 +1396,7 @@ export default function ShopReviewPage() {
                 whileTap={canSubmit && !submitting && user ? { scale: 0.97 } : {}}
               >
                 {submitting ? <Loader size={18} className="spin" /> : <Send size={18} />}
-                {submitting ? 'Submitting…' : 'Submit Review'}
+                {submitting ? 'Saving…' : existingUserReview ? 'Update Review' : 'Submit Review'}
               </motion.button>
             </fieldset>
           </motion.div>
@@ -1324,7 +1413,7 @@ export default function ShopReviewPage() {
             transition={{ type: 'spring', damping: 20, stiffness: 300 }}>
             <div className="success-toast-icon"><CheckCircle /></div>
             <div className="success-toast-text">
-              <strong>Review submitted!</strong>
+              <strong>{existingUserReview ? 'Review updated!' : 'Review submitted!'}</strong>
               <span>Thank you for helping the community.</span>
             </div>
           </motion.div>

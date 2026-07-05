@@ -1,16 +1,38 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, LogOut, User } from 'lucide-react';
+import {
+  Menu, X, LogOut, User, Search, MapPin,
+  ShoppingBasket, UtensilsCrossed, Scissors, Pill, Tv,
+  Smartphone, Shirt, Leaf, Milk, CakeSlice, Wrench,
+  BookOpen, Car, Flame, Store,
+} from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { INDIAN_CITIES, SEO_CATEGORIES } from '../data/searchData';
 import AuthModal from './AuthModal';
 import './Navbar.css';
+
+const NAV_CATEGORY_ICONS = {
+  ShoppingBasket, UtensilsCrossed, Scissors, Pill, Tv,
+  Smartphone, Shirt, Leaf, Milk, CakeSlice, Wrench,
+  BookOpen, Car, Flame, Store,
+};
+function NavCatIcon({ name, size = 13 }) {
+  const Icon = NAV_CATEGORY_ICONS[name] || Store;
+  return <Icon size={size} />;
+}
 
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  // Search state
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
+  const searchInputRef = useRef(null);
 
   const { user, displayName, avatarUrl, signOut } = useAuth();
 
@@ -19,6 +41,31 @@ function Navbar() {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Focus search input when opened
+  useEffect(() => {
+    if (searchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [searchOpen]);
+
+  // Build autocomplete suggestions from query
+  useEffect(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) { setSearchSuggestions([]); return; }
+
+    const citySugg = INDIAN_CITIES
+      .filter((c) => c.name.toLowerCase().startsWith(q))
+      .slice(0, 4)
+      .map((c) => ({ type: 'city', label: c.name, sub: c.state, slug: c.slug }));
+
+    const catSugg = SEO_CATEGORIES
+      .filter((c) => c.label.toLowerCase().includes(q))
+      .slice(0, 3)
+      .map((c) => ({ type: 'category', label: c.label, sub: 'Category', slug: c.slug, lucideIcon: c.lucideIcon }));
+
+    setSearchSuggestions([...citySugg, ...catSugg].slice(0, 6));
+  }, [searchQuery]);
 
   // Close user menu on outside click
   useEffect(() => {
@@ -30,6 +77,25 @@ function Navbar() {
 
   const location = useLocation();
   const navigate = useNavigate();
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (!q) return;
+    setSearchOpen(false);
+    setSearchQuery('');
+    navigate(`/search?q=${encodeURIComponent(q)}`);
+  };
+
+  const handleSuggestionClick = (sug) => {
+    setSearchOpen(false);
+    setSearchQuery('');
+    if (sug.type === 'city') {
+      navigate(`/shops/${sug.slug}`);
+    } else {
+      navigate(`/search?cat=${sug.slug}`);
+    }
+  };
 
   const handleNavClick = (e, path, id) => {
     e.preventDefault();
@@ -95,6 +161,16 @@ function Navbar() {
               </li>
             ))}
           </ul>
+
+          {/* Search button */}
+          <button
+            className="navbar__search-btn"
+            onClick={() => setSearchOpen(true)}
+            aria-label="Search shops"
+          >
+            <Search size={16} />
+            <span className="navbar__search-btn-text">Search shops…</span>
+          </button>
 
           {/* Auth section */}
           <div className="navbar__auth">
@@ -178,6 +254,86 @@ function Navbar() {
       </motion.nav>
 
       <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
+
+      {/* Search overlay */}
+      <AnimatePresence>
+        {searchOpen && (
+          <motion.div
+            className="navbar__search-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            onClick={() => setSearchOpen(false)}
+          >
+            <motion.div
+              className="navbar__search-modal"
+              initial={{ opacity: 0, y: -16, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.97 }}
+              transition={{ duration: 0.2 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <form className="navbar__search-form" onSubmit={handleSearch}>
+                <Search size={18} className="navbar__search-icon" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Search city, shop type, or name…"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="navbar__search-input"
+                  autoComplete="off"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    className="navbar__search-clear"
+                    onClick={() => setSearchQuery('')}
+                    aria-label="Clear"
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+              </form>
+
+              {/* Suggestions */}
+              {searchSuggestions.length > 0 && (
+                <ul className="navbar__search-sugg">
+                  {searchSuggestions.map((s, i) => (
+                    <li key={i} onMouseDown={() => handleSuggestionClick(s)}>
+                      {s.type === 'city'
+                        ? <MapPin size={14} className="sugg-icon sugg-icon--city" />
+                        : <span className="sugg-icon sugg-icon--cat"><NavCatIcon name={s.lucideIcon} size={14} /></span>}
+                      <span className="sugg-label">{s.label}</span>
+                      <span className="sugg-sub">{s.sub}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {/* Quick category links */}
+              {!searchQuery && (
+                <div className="navbar__search-quick">
+                  <p className="navbar__search-quick-label">Browse categories</p>
+                  <div className="navbar__search-cats">
+                    {SEO_CATEGORIES.map((cat) => (
+                      <button
+                        key={cat.slug}
+                        type="button"
+                        className="navbar__search-cat-chip"
+                        onMouseDown={() => { navigate(`/search?cat=${cat.slug}`); setSearchOpen(false); }}
+                      >
+                        <NavCatIcon name={cat.lucideIcon} size={13} /> {cat.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

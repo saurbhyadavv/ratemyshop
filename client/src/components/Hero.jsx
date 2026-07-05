@@ -131,7 +131,7 @@ const QrScannerVisual = ({ onClick }) => (
 
     <div className="hero__qr-label">
       <ScanLine size={18} />
-      <span>Tap to Scan UPI QR Code</span>
+      <span>Scan the Shop's QR Code</span>
       <ChevronRight size={16} />
     </div>
   </motion.div>
@@ -155,7 +155,7 @@ const lineVariants = {
 const OrDivider = () => (
   <div className="hero__or-divider">
     <span className="hero__or-line" />
-    <span className="hero__or-text">or enter UPI ID manually</span>
+    <span className="hero__or-text">or enter the shop's UPI ID manually</span>
     <span className="hero__or-line" />
   </div>
 );
@@ -189,14 +189,15 @@ function Hero() {
           animate="visible"
         >
           <motion.h1 className="hero__title" variants={lineVariants}>
-            Rate Any Shop.
+            Review Any Shop.
           </motion.h1>
           <motion.h1 className="hero__title hero__title--accent" variants={lineVariants}>
-            Just Scan the UPI.
+            Just Scan the QR Code.
           </motion.h1>
           <motion.p className="hero__subtitle" variants={lineVariants}>
-            India's first community-driven review platform for local shops.
-            No app needed - just scan or enter a UPI ID to share your experience.
+            India's first hyper-local shop review platform. The QR code at the shop
+            counter is its unique identity - scan it, read reviews, and share yours.
+            <strong> No payments. No app. No registration needed to read.</strong>
           </motion.p>
         </motion.div>
 
