@@ -720,148 +720,126 @@
 
 /* Near-me Section Styling */
 .sp-nearme {
-  background: #ffffff;
-  border: 1.5px solid rgba(0, 0, 0, 0.05);
-  border-radius: 20px;
-  padding: 20px 24px;
-  margin-top: 24px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.03);
+  background: linear-gradient(135deg, #fff9f6 0%, #ffffff 60%);
+  border: 1.5px solid rgba(255, 107, 43, 0.1);
+  border-radius: 16px;
+  padding: 16px 20px;
+  margin-top: 20px;
+  box-shadow: 0 4px 20px rgba(255, 107, 43, 0.06);
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  align-items: flex-start;
+  gap: 14px;
+  align-items: stretch;
   width: 100%;
 }
 
 .sp-nearme__toggle {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   font-family: 'Outfit', sans-serif;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 700;
   color: #64748b;
   background: #f8fafc;
   border: 1.5px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 10px 20px;
+  border-radius: 10px;
+  padding: 9px 18px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.18s ease;
+  width: 100%;
 }
 
 .sp-nearme__toggle:hover {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
-  color: #334155;
-  transform: translateY(-1px);
+  background: #fff3ef;
+  border-color: rgba(255, 107, 43, 0.3);
+  color: var(--saffron);
 }
 
 .sp-nearme__toggle--active {
-  background: rgba(0, 137, 123, 0.06);
+  background: linear-gradient(135deg, rgba(0, 137, 123, 0.08), rgba(0, 137, 123, 0.04));
   border-color: var(--teal);
   color: var(--teal) !important;
-  box-shadow: 0 4px 12px rgba(0, 137, 123, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 137, 123, 0.12);
 }
 
 .sp-nearme__toggle--active:hover {
-  background: rgba(0, 137, 123, 0.1);
+  background: rgba(0, 137, 123, 0.12);
   border-color: var(--teal);
 }
 
 .sp-nearme__error {
-  margin-left: 8px;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--deep-red);
   font-weight: 500;
+  margin-left: 4px;
 }
 
-/* Slider */
+/* Radius selector container */
 .sp-nearme__slider {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
-  max-width: 580px;
-  padding: 4px 0;
+  padding: 2px 0;
+  border-top: 1px dashed rgba(255, 107, 43, 0.12);
+  padding-top: 12px;
 }
 
 .sp-nearme__radius-label {
   font-family: 'Outfit', sans-serif;
-  font-size: 0.9rem;
-  color: #475569;
+  font-size: 0.82rem;
+  color: #64748b;
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 
 .sp-nearme__radius-label strong {
   color: var(--saffron);
   font-weight: 800;
+  font-size: 0.9rem;
 }
 
-/* Range input styling */
-.sp-nearme__range {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 6px;
-  border-radius: 3px;
-  background: #e2e8f0;
-  outline: none;
-  margin: 12px 0 6px;
-}
-
-/* Webkit browser thumb */
-.sp-nearme__range::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--saffron);
-  border: 2.5px solid #fff;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(255, 107, 43, 0.3);
-  transition: transform 0.15s, background-color 0.15s;
-}
-
-.sp-nearme__range::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
-  background: var(--deep-red);
-}
-
-/* Firefox browser thumb */
-.sp-nearme__range::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--saffron);
-  border: 2.5px solid #fff;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(255, 107, 43, 0.3);
-  transition: transform 0.15s, background-color 0.15s;
-}
-
-.sp-nearme__range::-moz-range-thumb:hover {
-  transform: scale(1.2);
-  background: var(--deep-red);
-}
-
+/* ── Radius snap buttons ─────────────────────────── */
 .sp-nearme__ticks {
   display: flex;
-  justify-content: space-between;
+  gap: 6px;
   width: 100%;
-  padding: 0 4px;
 }
 
 .sp-nearme__tick {
+  flex: 1;
   font-family: 'Outfit', sans-serif;
-  font-size: 0.72rem;
-  color: #94a3b8;
+  font-size: 0.75rem;
   font-weight: 600;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 6px 4px;
   cursor: pointer;
-  transition: color 0.15s, font-weight 0.15s;
+  text-align: center;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.12s, box-shadow 0.15s;
+  line-height: 1.2;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.sp-nearme__tick:hover {
+  background: #fff3ef;
+  border-color: rgba(255, 107, 43, 0.4);
+  color: var(--saffron);
+  transform: translateY(-1px);
 }
 
 .sp-nearme__tick--active {
-  color: var(--saffron);
+  background: var(--saffron);
+  border-color: var(--saffron);
+  color: #fff;
   font-weight: 800;
+  transform: translateY(-1px) scale(1.04);
+  box-shadow: 0 3px 10px rgba(255, 107, 43, 0.3);
 }
 
 /* Enhanced City Autocomplete Dropdown */

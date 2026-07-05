@@ -1174,6 +1174,46 @@
   align-items: center;
 }
 
+/* GPS pin button inside Suggest Edit panel */
+.suggest-pin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  background: #f1f5f9;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 6px;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  width: 100%;
+  justify-content: center;
+}
+
+.suggest-pin-btn:hover:not(:disabled) {
+  background: #ffe8da;
+  border-color: var(--saffron);
+  color: var(--saffron);
+}
+
+.suggest-pin-btn--active {
+  background: #e6f7f4;
+  border-color: var(--teal);
+  color: var(--teal);
+  font-weight: 700;
+}
+
+.suggest-pin-btn--loading {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+
+
 .edit-save-btn {
   display: flex;
   align-items: center;

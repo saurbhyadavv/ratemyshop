@@ -217,6 +217,8 @@ export default function ShopReviewPage() {
   const [suggestName, setSuggestName] = useState('');
   const [suggestType, setSuggestType] = useState('');
   const [suggestCity, setSuggestCity] = useState('');
+  const [suggestGps, setSuggestGps] = useState(null);     // { lat, lng } from the edit panel's own pin button
+  const [suggestLocating, setSuggestLocating] = useState(false);
   const [suggestSubmitting, setSuggestSubmitting] = useState(false);
   const [suggestDone, setSuggestDone] = useState(false);
 
@@ -366,7 +368,7 @@ export default function ShopReviewPage() {
         // Fetch all community shop info suggestions
         const { data: allSugg } = await supabase
           .from('shop_suggestions')
-          .select('suggested_name, suggested_type, votes, created_at')
+          .select('suggested_name, suggested_type, suggested_city, suggested_state, votes, created_at')
           .eq('shop_id', decodedUpiId);
 
         if (isMounted && allSugg && allSugg.length > 0) {
@@ -446,28 +448,30 @@ export default function ShopReviewPage() {
         ? INDIAN_CITIES.find((c) => c.slug === suggestCity) || null
         : null;
 
+      // Use the edit panel's own pin (suggestGps), or fall back to review form GPS
+      const pinCoords = suggestGps || gpsCoords;
+
       await supabase.from('shop_suggestions').insert({
         shop_id: decodedUpiId,
         suggested_name: suggestName.trim() || null,
         suggested_type: suggestType || null,
         suggested_city:  cityObj?.name  || null,
         suggested_state: cityObj?.state || null,
-        // Include GPS pin if the reviewer has already detected their location
-        suggested_lat: gpsCoords?.lat || null,
-        suggested_lng: gpsCoords?.lng || null,
+        suggested_lat: pinCoords?.lat || null,
+        suggested_lng: pinCoords?.lng || null,
         votes: 1,
       });
 
       if (suggestName.trim()) setShopDisplayName(suggestName.trim());
       if (suggestType) setShopType(suggestType);
 
-      // Also write city directly to shops so search works immediately
-      if (cityObj || gpsCoords) {
+      // Also write city + coords directly to shops so search works immediately
+      if (cityObj || pinCoords) {
         await supabase.from('shops').upsert(
           {
             upi_id: decodedUpiId,
-            ...(cityObj  ? { city: cityObj.name, state: cityObj.state } : {}),
-            ...(gpsCoords ? { lat: gpsCoords.lat, lng: gpsCoords.lng }  : {}),
+            ...(cityObj   ? { city: cityObj.name, state: cityObj.state } : {}),
+            ...(pinCoords  ? { lat: pinCoords.lat,  lng: pinCoords.lng  } : {}),
           },
           { onConflict: 'upi_id' }
         );
@@ -475,6 +479,7 @@ export default function ShopReviewPage() {
 
       setIsEditingShopInfo(false);
       setSuggestDone(true);
+      setSuggestGps(null);
     } catch (err) {
       console.error('Suggestion error:', err);
     } finally {
@@ -1020,6 +1025,33 @@ export default function ShopReviewPage() {
                         ))}
                       </select>
                     </div>
+                    {/* Independent GPS pin button — works even if user hasn't used the review form GPS */}
+                    <button
+                      type="button"
+                      className={`suggest-pin-btn${suggestGps ? ' suggest-pin-btn--active' : ''}${suggestLocating ? ' suggest-pin-btn--loading' : ''}`}
+                      onClick={() => {
+                        if (suggestGps) { setSuggestGps(null); return; }
+                        if (!navigator.geolocation) return;
+                        setSuggestLocating(true);
+                        navigator.geolocation.getCurrentPosition(
+                          (pos) => {
+                            setSuggestGps({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                            setSuggestLocating(false);
+                          },
+                          () => setSuggestLocating(false),
+                          { enableHighAccuracy: true, timeout: 8000 }
+                        );
+                      }}
+                      disabled={suggestLocating}
+                      title={suggestGps ? 'GPS pinned — click to remove' : 'Pin my current GPS location to this shop'}
+                    >
+                      {suggestLocating ? (
+                        <Loader size={12} className="spin" />
+                      ) : (
+                        <Navigation size={12} />
+                      )}
+                      {suggestGps ? 'GPS pinned ✓' : 'Pin my location'}
+                    </button>
                     <div className="shop-name-edit-actions">
                       <button
                         className="edit-save-btn"
@@ -1031,7 +1063,7 @@ export default function ShopReviewPage() {
                       </button>
                       <button
                         className="edit-cancel-btn"
-                        onClick={() => { setIsEditingShopInfo(false); setSuggestName(''); setSuggestType(''); setSuggestCity(''); }}
+                        onClick={() => { setIsEditingShopInfo(false); setSuggestName(''); setSuggestType(''); setSuggestCity(''); setSuggestGps(null); }}
                       >
                         <X size={13} />
                       </button>

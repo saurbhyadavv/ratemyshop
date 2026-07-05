@@ -293,10 +293,35 @@ export default function SearchPage() {
   const city     = citySlug     ? getCityBySlug(citySlug)         : null;
   const category = categorySlug ? getCategoryBySlug(categorySlug) : null;
 
+  const [localQuery, setLocalQuery] = useState(searchParams.get('q') || '');
   const [query, setQuery]           = useState(searchParams.get('q') || '');
   const [cityInput, setCityInput]   = useState(city?.name || searchParams.get('city') || '');
   const [citySuggestions, setCitySuggestions] = useState([]);
   const [showCitySugg, setShowCitySugg]       = useState(false);
+
+  // Synchronize city parameter with cityInput state
+  useEffect(() => {
+    if (city) {
+      setCityInput(city.name);
+    } else if (!citySlug) {
+      setCityInput(searchParams.get('city') || '');
+    }
+  }, [city, citySlug, searchParams]);
+
+  // Synchronize category parameter with filters state
+  useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      shopTypes: category ? category.shopTypes : [],
+    }));
+  }, [category]);
+
+  // Synchronize URL query changes with local input state
+  useEffect(() => {
+    const qParam = searchParams.get('q') || '';
+    setLocalQuery(qParam);
+    setQuery(qParam);
+  }, [searchParams]);
 
   const [shops, setShops]           = useState([]);
   const [loading, setLoading]       = useState(false);
@@ -469,7 +494,44 @@ export default function SearchPage() {
     document.title = title;
   }, [city, category]);
 
-  const handleSearch   = (e) => { e.preventDefault(); fetchShops(true); };
+  const getCategoryLink = (catSlug) => {
+    const params = new URLSearchParams();
+    if (query)                  params.set('q', query);
+    if (sortBy !== 'rating_desc') params.set('sort', sortBy);
+    if (filters.minRating > 0)  params.set('rating', filters.minRating);
+    if (filters.priceRange > 0) params.set('price', filters.priceRange);
+    
+    const qs = params.toString();
+    if (city) {
+      return `/shops/${city.slug}/${catSlug}${qs ? `?${qs}` : ''}`;
+    } else {
+      return `/search?cat=${catSlug}${qs ? `&${qs}` : ''}`;
+    }
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setQuery(localQuery);
+
+    // If city input is cleared, navigate to bare search page
+    if (!cityInput.trim() && citySlug) {
+      if (categorySlug) navigate(`/search?cat=${categorySlug}${localQuery ? `&q=${encodeURIComponent(localQuery)}` : ''}`);
+      else navigate(`/search${localQuery ? `?q=${encodeURIComponent(localQuery)}` : ''}`);
+      return;
+    }
+
+    // If they typed a matching city name, navigate to its URL path
+    if (cityInput.trim()) {
+      const matched = INDIAN_CITIES.find(c => c.name.toLowerCase() === cityInput.trim().toLowerCase());
+      if (matched && matched.slug !== citySlug) {
+        if (categorySlug) navigate(`/shops/${matched.slug}/${categorySlug}${localQuery ? `?q=${encodeURIComponent(localQuery)}` : ''}`);
+        else navigate(`/shops/${matched.slug}${localQuery ? `?q=${encodeURIComponent(localQuery)}` : ''}`);
+        return;
+      }
+    }
+
+    fetchShops(true);
+  };
   const handleLoadMore = () => { const next = page + 1; setPage(next); fetchShops(false); };
   const handleResetFilters = () => setFilters({ shopTypes: category?.shopTypes || [], minRating: 0, priceRange: 0 });
   const hasMore = shops.length < totalCount;
@@ -562,8 +624,8 @@ export default function SearchPage() {
               <input
                 type="text"
                 placeholder="Shop name or type…"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                value={localQuery}
+                onChange={(e) => setLocalQuery(e.target.value)}
                 className="sp-search-bar__input"
                 aria-label="Search query"
               />
@@ -586,7 +648,7 @@ export default function SearchPage() {
             {SEO_CATEGORIES.map((cat) => (
               <Link
                 key={cat.slug}
-                to={city ? `/shops/${city.slug}/${cat.slug}` : `/search?cat=${cat.slug}`}
+                to={getCategoryLink(cat.slug)}
                 className={`sp-cat-chip ${category?.slug === cat.slug ? 'sp-cat-chip--active' : ''}`}
               >
                 <CategoryIcon name={cat.lucideIcon} size={14} />
@@ -615,23 +677,19 @@ export default function SearchPage() {
             {nearMe && userCoords && (
               <div className="sp-nearme__slider">
                 <span className="sp-nearme__radius-label">
-                  Search within <strong>{radius} km</strong>
+                  Search within <strong>{radius < 1 ? `${radius * 1000} m` : `${radius} km`}</strong>
                 </span>
-                <input
-                  type="range"
-                  min="0.5" max="10" step="0.5"
-                  value={radius}
-                  onChange={(e) => setRadius(parseFloat(e.target.value))}
-                  className="sp-nearme__range"
-                />
-                <div className="sp-nearme__ticks">
+                <div className="sp-nearme__ticks sp-nearme__ticks--snap">
                   {RADIUS_OPTIONS.map((opt) => (
-                    <span
+                    <button
                       key={opt.value}
+                      type="button"
                       className={`sp-nearme__tick${opt.value === radius ? ' sp-nearme__tick--active' : ''}`}
+                      onClick={() => setRadius(opt.value)}
+                      aria-pressed={opt.value === radius}
                     >
                       {opt.label}
-                    </span>
+                    </button>
                   ))}
                 </div>
               </div>
