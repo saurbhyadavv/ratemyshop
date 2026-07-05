@@ -415,11 +415,15 @@ export default function ShopReviewPage() {
         }
 
         // Fetch shop details from the shops table
-        const { data: shopData } = await supabase
+        const { data: shopData, error: shopError } = await supabase
           .from('shops')
           .select('display_name, shop_type, name, category, city, state, lat, lng')
           .eq('upi_id', decodedUpiId)
           .maybeSingle();
+
+        console.log('[ShopReviewPage] querying shops for upi_id:', decodedUpiId);
+        console.log('[ShopReviewPage] shopData returned:', shopData);
+        if (shopError) console.error('[ShopReviewPage] shopError:', shopError);
 
         if (isMounted && shopData) {
           const dbName = shopData.display_name || shopData.name;
@@ -432,25 +436,8 @@ export default function ShopReviewPage() {
           if (shopData.lng)   setShopLng(shopData.lng);
         }
 
-        // Fetch all community shop info suggestions
-        const { data: allSugg } = await supabase
-          .from('shop_suggestions')
-          .select('suggested_name, suggested_type, suggested_city, suggested_state, votes, created_at')
-          .eq('shop_id', decodedUpiId);
-
-        if (isMounted && allSugg && allSugg.length > 0) {
-          // Find highest voted name suggestion
-          const nameSugg = allSugg
-            .filter((s) => s.suggested_name)
-            .sort((a, b) => b.votes - a.votes)[0];
-          if (nameSugg) setShopDisplayName(nameSugg.suggested_name);
-
-          // Find latest type suggestion
-          const typeSugg = allSugg
-            .filter((s) => s.suggested_type)
-            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
-          if (typeSugg) setShopType(typeSugg.suggested_type);
-        }
+        // shop_suggestions are now aggregated server-side by the
+        // trg_sync_shop_from_suggestions trigger — no need to re-read them here.
 
         // Fetch user voted reviews
         const localVotes = JSON.parse(localStorage.getItem('ratemyshop_voted_reviews') || '[]');
@@ -520,29 +507,22 @@ export default function ShopReviewPage() {
 
       await supabase.from('shop_suggestions').insert({
         shop_id: decodedUpiId,
-        suggested_name: suggestName.trim() || null,
-        suggested_type: suggestType || null,
-        suggested_city:  cityObj?.name  || null,
-        suggested_state: cityObj?.state || null,
-        suggested_lat: pinCoords?.lat || null,
-        suggested_lng: pinCoords?.lng || null,
+        suggested_name:  suggestName.trim() || null,
+        suggested_type:  suggestType        || null,
+        suggested_city:  cityObj?.name      || null,
+        suggested_state: cityObj?.state     || null,
+        suggested_lat:   pinCoords?.lat     || null,
+        suggested_lng:   pinCoords?.lng     || null,
         votes: 1,
       });
 
+      // Optimistically update local UI — the DB trigger will sync shops in the background
       if (suggestName.trim()) setShopDisplayName(suggestName.trim());
-      if (suggestType) setShopType(suggestType);
-
-      // Also write city + coords directly to shops so search works immediately
-      if (cityObj || pinCoords) {
-        await supabase.from('shops').upsert(
-          {
-            upi_id: decodedUpiId,
-            ...(cityObj   ? { city: cityObj.name, state: cityObj.state } : {}),
-            ...(pinCoords  ? { lat: pinCoords.lat,  lng: pinCoords.lng  } : {}),
-          },
-          { onConflict: 'upi_id' }
-        );
-      }
+      if (suggestType)        setShopType(suggestType);
+      if (cityObj?.name)      setShopCity(cityObj.name);
+      if (cityObj?.state)     setShopState(cityObj.state);
+      if (pinCoords?.lat)     setShopLat(pinCoords.lat);
+      if (pinCoords?.lng)     setShopLng(pinCoords.lng);
 
       setIsEditingShopInfo(false);
       setSuggestDone(true);

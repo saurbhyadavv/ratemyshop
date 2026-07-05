@@ -461,17 +461,58 @@
 .sp-card__no-rating { font-size: 0.76rem; color: #bbb; }
 .sp-card__price   { margin-left: auto; font-size: 0.74rem; font-weight: 600; color: var(--teal); }
 
-/* Skeleton */
-.sp-card--skeleton {
-  min-height: 140px;
-  pointer-events: none;
-  background: linear-gradient(90deg, #f5f5f5 25%, #eeeeee 50%, #f5f5f5 75%);
-  background-size: 200% 100%;
-  animation: sp-shimmer 1.5s infinite;
-}
+/* ── Skeleton cards ───────────────────────────────────────────────────── */
 @keyframes sp-shimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+.sp-skel {
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+  overflow: hidden;
+}
+
+.sp-skel__icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.sp-skel__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sp-skel__line {
+  border-radius: 6px;
+  height: 12px;
+}
+
+.sp-skel__line--title  { width: 60%; height: 14px; }
+.sp-skel__line--type   { width: 36%; height: 10px; border-radius: 20px; }
+.sp-skel__line--loc    { width: 45%; height: 10px; margin-top: 2px; }
+.sp-skel__line--rating { width: 70%; height: 10px; margin-top: 6px; }
+
+.sp-skel__icon,
+.sp-skel__line {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 0px,
+    #e8e8e8 40px,
+    #f0f0f0 80px
+  );
+  background-size: 400px 100%;
+  animation: sp-shimmer 1.4s ease-in-out infinite;
 }
 
 /* ── Empty state ──────────────────────────────────────────────────────── */
@@ -577,7 +618,11 @@
 .sp-browse__cat-list a:hover svg { opacity: 1; }
 
 /* ── Responsive ───────────────────────────────────────────────────────── */
+
+/* Tablet: 860px */
 @media (max-width: 860px) {
+  .sp-hero { padding: 48px 24px 32px; }
+
   .sp-search-bar {
     flex-wrap: wrap;
     border-radius: 16px;
@@ -587,26 +632,43 @@
   .sp-search-bar__city {
     max-width: 100%;
     border-right: none;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+    border-bottom: 1px solid rgba(0,0,0,0.07);
     padding-right: 0;
     padding-bottom: 10px;
     margin-right: 0;
     width: 100%;
   }
-  .sp-search-bar__btn { width: 100%; justify-content: center; }
-  .sp-layout { grid-template-columns: 1fr; }
-  .sp-sidebar { position: static; display: none; }
-  .sp-sidebar--open { display: block; margin-bottom: 16px; }
-  .sp-filter-toggle { display: flex; }
-  .sp-browse__grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  .sp-search-bar__btn    { width: 100%; justify-content: center; }
+  .sp-layout              { grid-template-columns: 1fr; }
+  .sp-sidebar             { position: static; display: none; }
+  .sp-sidebar--open       { display: block; margin-bottom: 16px; }
+  .sp-filter-toggle       { display: flex; }
+  .sp-browse__grid        { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  .sp-grid                { grid-template-columns: repeat(2, 1fr); }
+  .sp-cat-links           { flex-wrap: wrap; gap: 6px; }
 }
 
-@media (max-width: 480px) {
-  .sp-hero  { padding: 36px 16px 26px; }
-  .sp-body  { padding: 18px 16px 52px; }
-  .sp-grid  { grid-template-columns: 1fr; }
-  .sp-cat-links { gap: 6px; }
-  .sp-cat-chip  { font-size: 0.76rem; padding: 5px 10px; }
+/* Large mobile: 600px */
+@media (max-width: 600px) {
+  .sp-hero                { padding: 40px 16px 28px; }
+  .sp-hero__title         { font-size: clamp(1.5rem, 6vw, 2rem); }
+  .sp-hero__sub           { font-size: 0.88rem; }
+  .sp-body                { padding: 18px 16px 52px; }
+  .sp-grid                { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .sp-nearme              { padding: 14px 16px; }
+  .sp-nearme__tick        { font-size: 0.68rem; padding: 5px 2px; }
+  .sp-toolbar             { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .sp-toolbar__sort       { width: 100%; }
+  .sp-toolbar__sort select { width: 100%; }
+}
+
+/* Small mobile: 420px */
+@media (max-width: 420px) {
+  .sp-grid                { grid-template-columns: 1fr; }
+  .sp-cat-links           { gap: 5px; }
+  .sp-cat-chip            { font-size: 0.72rem; padding: 5px 9px; }
+  .sp-card__name          { font-size: 0.9rem; }
+  .sp-browse__grid        { grid-template-columns: 1fr 1fr; }
 }
 
 /* ── GPS and Hyperlocal Search Additions ─────────────────────────────── */

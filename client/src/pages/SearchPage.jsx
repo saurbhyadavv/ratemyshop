@@ -159,7 +159,7 @@ function ShopCard({ shop, nearMe, userCoords }) {
     : null;
 
   return (
-    <Link to={`/shop/${shop.hash}`} className="sp-card" aria-label={`View ${shop.display_name || shop.name}`}>
+    <Link to={`/shop/${encodeURIComponent(shop.upi_id)}`} className="sp-card" aria-label={`View ${shop.display_name || shop.name}`}>
       <div className="sp-card__icon-wrap">
         <Store size={26} strokeWidth={1.5} />
       </div>
@@ -440,7 +440,7 @@ export default function SearchPage() {
       let q = supabase
         .from('shops')
         .select(
-          'upi_id, name, display_name, shop_type, category, hash, avg_rating, review_count, price_range, city, state',
+          'upi_id, name, display_name, shop_type, category, avg_rating, review_count, price_range, city, state',
           { count: 'exact' }
         );
 
@@ -799,7 +799,15 @@ export default function SearchPage() {
             {loading && (
               <div className="sp-grid">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="sp-card sp-card--skeleton" />
+                  <div key={i} className="sp-skel">
+                    <div className="sp-skel__icon" />
+                    <div className="sp-skel__body">
+                      <div className="sp-skel__line sp-skel__line--title" />
+                      <div className="sp-skel__line sp-skel__line--type" />
+                      <div className="sp-skel__line sp-skel__line--loc" />
+                      <div className="sp-skel__line sp-skel__line--rating" />
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
