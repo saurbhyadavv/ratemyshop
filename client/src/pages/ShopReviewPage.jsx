@@ -213,6 +213,10 @@ export default function ShopReviewPage() {
   /* Shop info from community suggestions */
   const [shopDisplayName, setShopDisplayName] = useState('');
   const [shopType, setShopType] = useState('general');
+  const [shopCity, setShopCity]   = useState('');
+  const [shopState, setShopState] = useState('');
+  const [shopLat, setShopLat]     = useState(null);
+  const [shopLng, setShopLng]     = useState(null);
   const [isEditingShopInfo, setIsEditingShopInfo] = useState(false);
   const [suggestName, setSuggestName] = useState('');
   const [suggestType, setSuggestType] = useState('');
@@ -289,6 +293,65 @@ export default function ShopReviewPage() {
     resolve();
   }, [shopHash]);
 
+  /* ── SEO head update ───────────────────────────── */
+  useEffect(() => {
+    if (!decodedUpiId) return;
+
+    const name  = shopDisplayName || getShopName(decodedUpiId);
+    const type  = SHOP_TYPES.find((t) => t.value === shopType)?.label || 'Shop';
+    const loc   = shopCity ? ` in ${shopCity}` : '';
+
+    // Title
+    document.title = `${name}${loc} – Reviews & Ratings | RateMyShop`;
+
+    // Meta description
+    const desc = `Read community reviews for ${name}${loc} – a ${type}. See ratings, hygiene scores, price feedback and more. Reviewed via UPI on RateMyShop.`;
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (!metaDesc) { metaDesc = document.createElement('meta'); metaDesc.name = 'description'; document.head.appendChild(metaDesc); }
+    metaDesc.content = desc;
+
+    // Canonical
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) { canonical = document.createElement('link'); canonical.rel = 'canonical'; document.head.appendChild(canonical); }
+    canonical.href = `https://ratemyshop.in/shop/${shopHash}`;
+
+    // Robots — shop pages are always indexable
+    let robots = document.querySelector('meta[name="robots"]');
+    if (!robots) { robots = document.createElement('meta'); robots.name = 'robots'; document.head.appendChild(robots); }
+    robots.content = 'index, follow';
+
+    // Open Graph
+    const setOg = (prop, val) => {
+      let el = document.querySelector(`meta[property="${prop}"]`);
+      if (!el) { el = document.createElement('meta'); el.setAttribute('property', prop); document.head.appendChild(el); }
+      el.content = val;
+    };
+    setOg('og:title', `${name}${loc} – RateMyShop`);
+    setOg('og:description', desc);
+    setOg('og:url', `https://ratemyshop.in/shop/${shopHash}`);
+    setOg('og:type', 'business.business');
+
+    // JSON-LD LocalBusiness schema
+    const existing = document.getElementById('shop-jsonld');
+    if (existing) existing.remove();
+    const schema = {
+      '@context': 'https://schema.org',
+      '@type': 'LocalBusiness',
+      name,
+      '@id': `https://ratemyshop.in/shop/${shopHash}`,
+      url:  `https://ratemyshop.in/shop/${shopHash}`,
+      ...(shopCity  ? { address: { '@type': 'PostalAddress', addressLocality: shopCity, addressRegion: shopState, addressCountry: 'IN' } } : {}),
+      ...(shopLat && shopLng ? { geo: { '@type': 'GeoCoordinates', latitude: shopLat, longitude: shopLng } } : {}),
+    };
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.id   = 'shop-jsonld';
+    script.textContent = JSON.stringify(schema);
+    document.head.appendChild(script);
+
+    return () => { document.getElementById('shop-jsonld')?.remove(); };
+  }, [decodedUpiId, shopDisplayName, shopType, shopCity, shopState, shopLat, shopLng, shopHash]);
+
   /* ── Fetch reviews + shop info ─────────────────── */
   useEffect(() => {
     if (!decodedUpiId) return;
@@ -354,7 +417,7 @@ export default function ShopReviewPage() {
         // Fetch shop details from the shops table
         const { data: shopData } = await supabase
           .from('shops')
-          .select('display_name, shop_type, name, category')
+          .select('display_name, shop_type, name, category, city, state, lat, lng')
           .eq('upi_id', decodedUpiId)
           .maybeSingle();
 
@@ -363,6 +426,10 @@ export default function ShopReviewPage() {
           const dbType = shopData.shop_type || shopData.category;
           if (dbName) setShopDisplayName(dbName);
           if (dbType) setShopType(dbType);
+          if (shopData.city)  setShopCity(shopData.city);
+          if (shopData.state) setShopState(shopData.state);
+          if (shopData.lat)   setShopLat(shopData.lat);
+          if (shopData.lng)   setShopLng(shopData.lng);
         }
 
         // Fetch all community shop info suggestions
@@ -1095,6 +1162,24 @@ export default function ShopReviewPage() {
                       {shopTypeLabel}
                       {suggestDone && <span className="suggest-done-badge">Updated</span>}
                     </p>
+                    {shopCity && (
+                      <p className="shop-location-line">
+                        <MapPin size={13} />
+                        <span>{shopCity}{shopState ? `, ${shopState}` : ''}</span>
+                        {shopLat && shopLng && (
+                          <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${shopLat},${shopLng}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="shop-maps-link"
+                            aria-label="Open in Google Maps"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                            Maps
+                          </a>
+                        )}
+                      </p>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>

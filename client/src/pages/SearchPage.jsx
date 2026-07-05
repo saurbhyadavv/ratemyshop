@@ -487,12 +487,57 @@ export default function SearchPage() {
   }, [city, category, query, sortBy, filters, nearMe, radius, userCoords, setSearchParams, fetchShops]);
 
   useEffect(() => {
-    let title = 'Search Shops – RateMyShop';
-    if (city && category) title = `${category.label} in ${city.name} – RateMyShop`;
-    else if (city)         title = `Shops in ${city.name} – RateMyShop`;
-    else if (category)     title = `${category.label} – RateMyShop`;
+    // ── Dynamic title
+    let title = 'Search Local Shops – RateMyShop';
+    if (city && category && query) title = `${query} ${category.label} in ${city.name} – RateMyShop`;
+    else if (city && category)     title = `Best ${category.label} in ${city.name} – Reviews & Ratings | RateMyShop`;
+    else if (city && query)        title = `"${query}" Shops in ${city.name} – RateMyShop`;
+    else if (city)                 title = `Top Rated Shops in ${city.name} – RateMyShop`;
+    else if (category && query)    title = `${query} ${category.label} Near You – RateMyShop`;
+    else if (category)             title = `Best ${category.label} Near You – RateMyShop`;
+    else if (query)                title = `Search "${query}" – RateMyShop`;
     document.title = title;
-  }, [city, category]);
+
+    // ── Dynamic meta description
+    let desc = 'Browse and rate local shops on RateMyShop – India\'s community-driven review platform.';
+    if (city && category) desc = `Find and rate the best ${category.label} in ${city.name}. Read real community reviews, ratings, and UPI-verified feedback on RateMyShop.`;
+    else if (city)        desc = `Discover top-rated local shops in ${city.name}. Kirana stores, restaurants, salons & more – all reviewed by real customers on RateMyShop.`;
+    else if (category)    desc = `Browse the best ${category.label} near you. Read honest community reviews on RateMyShop – India's UPI-based shop rating platform.`;
+    else if (query)       desc = `Search results for "${query}" on RateMyShop – find and review local shops across India.`;
+
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (!metaDesc) { metaDesc = document.createElement('meta'); metaDesc.name = 'description'; document.head.appendChild(metaDesc); }
+    metaDesc.content = desc;
+
+    // ── Canonical URL (helps Google not duplicate city+query combos)
+    const canonicalPath = city && category
+      ? `/shops/${city.slug}/${category.slug}`
+      : city
+        ? `/shops/${city.slug}`
+        : category
+          ? `/search?cat=${category.slug}`
+          : '/search';
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) { canonical = document.createElement('link'); canonical.rel = 'canonical'; document.head.appendChild(canonical); }
+    canonical.href = `https://ratemyshop.in${canonicalPath}`;
+
+    // ── Robots: paginated/filtered queries should not be indexed separately
+    let robots = document.querySelector('meta[name="robots"]');
+    if (!robots) { robots = document.createElement('meta'); robots.name = 'robots'; document.head.appendChild(robots); }
+    robots.content = query || filters.minRating > 0 || filters.priceRange > 0
+      ? 'noindex, follow'
+      : 'index, follow';
+
+    // ── Open Graph
+    const setOg = (prop, val) => {
+      let el = document.querySelector(`meta[property="${prop}"]`);
+      if (!el) { el = document.createElement('meta'); el.setAttribute('property', prop); document.head.appendChild(el); }
+      el.content = val;
+    };
+    setOg('og:title', title);
+    setOg('og:description', desc);
+    setOg('og:url', `https://ratemyshop.in${canonicalPath}`);
+  }, [city, category, query, filters]);
 
   const getCategoryLink = (catSlug) => {
     const params = new URLSearchParams();

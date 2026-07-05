@@ -165,6 +165,44 @@
   gap: 0.4rem;
 }
 
+.shop-location-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.82rem;
+  color: #64748b;
+  margin: 0 0 0.5rem;
+}
+
+.shop-location-line svg {
+  color: var(--saffron);
+  flex-shrink: 0;
+}
+
+.shop-maps-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: rgba(255, 107, 43, 0.08);
+  border: 1px solid rgba(255, 107, 43, 0.2);
+  border-radius: 20px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--saffron);
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.shop-maps-link:hover {
+  background: var(--saffron);
+  border-color: var(--saffron);
+  color: #fff;
+}
+
 .shop-badges-row {
   display: flex;
   flex-wrap: wrap;
