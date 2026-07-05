@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, SlidersHorizontal, X, ChevronDown, MapPin, Store,
   ArrowUpDown, ShoppingBasket, UtensilsCrossed, Scissors, Pill,
   Tv, Smartphone, Shirt, Leaf, Milk, CakeSlice, Wrench,
-  BookOpen, Car, Flame,
+  BookOpen, Car, Flame, Navigation, Loader,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import {
@@ -32,10 +32,19 @@ function CategoryIcon({ name, size = 16 }) {
 
 /* ── Constants ────────────────────────────────────────────────────────── */
 const SORT_OPTIONS = [
-  { value: 'rating_desc', label: 'Highest Rated' },
-  { value: 'rating_asc',  label: 'Lowest Rated' },
+  { value: 'rating_desc',  label: 'Highest Rated' },
+  { value: 'rating_asc',   label: 'Lowest Rated' },
   { value: 'reviews_desc', label: 'Most Reviewed' },
-  { value: 'name_asc',    label: 'Name (A–Z)' },
+  { value: 'name_asc',     label: 'Name (A–Z)' },
+  { value: 'distance',     label: 'Nearest First' },
+];
+
+const RADIUS_OPTIONS = [
+  { value: 0.5,  label: '500 m' },
+  { value: 1,    label: '1 km' },
+  { value: 3,    label: '3 km' },
+  { value: 5,    label: '5 km' },
+  { value: 10,   label: '10 km' },
 ];
 
 const PRICE_LABELS = { 1: '₹ Budget', 2: '₹₹ Moderate', 3: '₹₹₹ Pricey', 4: '₹₹₹₹ Premium' };
@@ -127,10 +136,27 @@ function EmptyState({ city, category }) {
 }
 
 /* ── Shop card ────────────────────────────────────────────────────────── */
-function ShopCard({ shop }) {
+function ShopCard({ shop, nearMe, userCoords }) {
   const typeLabel = getShopTypeLabel(shop.shop_type || shop.category);
   const rating     = shop.avg_rating ? Number(shop.avg_rating).toFixed(1) : null;
   const reviewCount = shop.review_count || 0;
+
+  // Compute distance in meters (from RPC) or approximate (from lat/lng)
+  const distanceM = nearMe && userCoords && shop.lat && shop.lng
+    ? (shop.distance_m || (() => {
+        const R = 6371000; // earth radius in meters
+        const dLat = (shop.lat - userCoords.lat) * Math.PI / 180;
+        const dLng = (shop.lng - userCoords.lng) * Math.PI / 180;
+        const a = Math.sin(dLat/2)**2 + Math.cos(userCoords.lat * Math.PI/180)
+                 * Math.cos(shop.lat * Math.PI/180) * Math.sin(dLng/2)**2;
+        return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      })())
+    : null;
+
+  const distanceLabel = distanceM
+    ? distanceM < 1000 ? `${Math.round(distanceM)} m`
+                       : `${(distanceM/1000).toFixed(1)} km`
+    : null;
 
   return (
     <Link to={`/shop/${shop.hash}`} className="sp-card" aria-label={`View ${shop.display_name || shop.name}`}>
@@ -140,11 +166,17 @@ function ShopCard({ shop }) {
       <div className="sp-card__body">
         <h3 className="sp-card__name">{shop.display_name || shop.name || 'Unnamed Shop'}</h3>
         <span className="sp-card__type">{typeLabel}</span>
-        {shop.location && (
-          <p className="sp-card__location"><MapPin size={11} />{shop.location}</p>
+        {(shop.city || shop.state) && (
+          <p className="sp-card__location">
+            <MapPin size={11} />
+            {[shop.city, shop.state].filter(Boolean).join(', ')}
+          </p>
         )}
       </div>
       <div className="sp-card__meta">
+        {distanceLabel && (
+          <span className="sp-card__distance"><Navigation size={11} />{distanceLabel}</span>
+        )}
         {rating ? (
           <>
             <Stars rating={Number(rating)} />
@@ -163,17 +195,40 @@ function ShopCard({ shop }) {
 }
 
 /* ── Filter panel ─────────────────────────────────────────────────────── */
-function FilterPanel({ filters, onChange, onReset }) {
-  const hasActive = filters.shopTypes.length > 0 || filters.minRating > 0 || filters.priceRange > 0;
+function FilterPanel({ filters, onChange, onReset, nearMe, radius, onChangeRadius }) {
+  const hasActive = filters.shopTypes.length > 0 || filters.minRating > 0 || filters.priceRange > 0 || (nearMe && radius !== 3);
+
+  const handleReset = () => {
+    onReset();
+    if (nearMe) onChangeRadius(3); // Reset radius to default 3km
+  };
 
   return (
     <aside className="sp-filters">
       <div className="sp-filters__header">
         <span className="sp-filters__title"><SlidersHorizontal size={14} /> Filters</span>
         {hasActive && (
-          <button className="sp-filters__reset" onClick={onReset}><X size={12} /> Reset</button>
+          <button className="sp-filters__reset" onClick={handleReset}><X size={12} /> Reset</button>
         )}
       </div>
+
+      {nearMe && (
+        <div className="sp-filters__group">
+          <p className="sp-filters__label">Search Radius</p>
+          <div className="sp-filters__radius-select-wrap">
+            <select
+              className="sp-filters__select"
+              value={radius}
+              onChange={(e) => onChangeRadius(Number(e.target.value))}
+              aria-label="Search radius"
+            >
+              {RADIUS_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
 
       <div className="sp-filters__group">
         <p className="sp-filters__label">Shop Type</p>
@@ -256,6 +311,13 @@ export default function SearchPage() {
   });
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+  // Near-me (hyperlocal) state
+  const [nearMe, setNearMe]           = useState(false);
+  const [userCoords, setUserCoords]   = useState(null); // { lat, lng }
+  const [radius, setRadius]           = useState(3);    // km
+  const [gpsLoading, setGpsLoading]   = useState(false);
+  const [gpsError, setGpsError]       = useState('');
+
   /* ── City autocomplete ──────────────────────────────────────────────── */
   const handleCityInput = (e) => {
     const val = e.target.value;
@@ -278,33 +340,94 @@ export default function SearchPage() {
     else navigate(`/shops/${c.slug}`);
   };
 
-  /* ── Fetch shops ────────────────────────────────────────────────────── */
+  /* ── Near-me GPS toggle ─────────────────────────────────────────────── */
+  const handleNearMeToggle = () => {
+    if (nearMe) {
+      // Turn off — revert to city search, keep coords for if they turn back on
+      setNearMe(false);
+      if (sortBy === 'distance') setSortBy('rating_desc');
+      return;
+    }
+    if (userCoords) {
+      // Already have coords — just activate
+      setNearMe(true);
+      setSortBy('distance');
+      return;
+    }
+    if (!navigator.geolocation) {
+      setGpsError('Location not supported in this browser.');
+      return;
+    }
+    setGpsLoading(true);
+    setGpsError('');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setNearMe(true);
+        setSortBy('distance');
+        setGpsLoading(false);
+      },
+      () => {
+        setGpsError('Could not get your location. Please allow location access and try again.');
+        setGpsLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  /* ── Fetch shops — city path OR near-me RPC path ───────────────────── */
   const fetchShops = useCallback(async (resetPage = true) => {
     setLoading(true);
     const currentPage = resetPage ? 0 : page;
     if (resetPage) setPage(0);
 
     try {
+      const activeTypes = filters.shopTypes.length > 0
+        ? filters.shopTypes
+        : (category?.shopTypes || []);
+
+      // ── Near-me path: call PostGIS RPC ──
+      if (nearMe && userCoords) {
+        const { data, error } = await supabase.rpc('search_shops_nearby', {
+          user_lat:      userCoords.lat,
+          user_lng:      userCoords.lng,
+          radius_km:     radius,
+          p_shop_types:  activeTypes.length > 0 ? activeTypes : null,
+          p_min_rating:  filters.minRating  || 0,
+          p_price_range: filters.priceRange || 0,
+          p_query:       query.trim() || null,
+          p_sort:        sortBy === 'distance' ? 'distance' : sortBy,
+          p_limit:       PAGE_SIZE,
+          p_offset:      currentPage * PAGE_SIZE,
+        });
+        if (error) throw error;
+        const results = data || [];
+        setShops(resetPage ? results : (prev) => [...prev, ...results]);
+        // RPC doesn't return total count — show load-more if full page returned
+        setTotalCount(resetPage
+          ? (results.length === PAGE_SIZE ? PAGE_SIZE + 1 : results.length)
+          : (prev) => prev + results.length
+        );
+        return;
+      }
+
+      // ── City path: regular Supabase query ──
       let q = supabase
         .from('shops')
         .select(
-          'upi_id, name, display_name, shop_type, category, hash, avg_rating, review_count, price_range, location',
+          'upi_id, name, display_name, shop_type, category, hash, avg_rating, review_count, price_range, city, state',
           { count: 'exact' }
         );
 
       if (city) {
-        q = q.ilike('location', `%${city.name}%`);
+        q = q.eq('city', city.name);
       } else if (cityInput) {
         const matched = INDIAN_CITIES.find((c) => c.name.toLowerCase() === cityInput.toLowerCase());
-        if (matched) q = q.ilike('location', `%${matched.name}%`);
+        if (matched) q = q.eq('city', matched.name);
       }
 
-      const activeTypes = filters.shopTypes.length > 0
-        ? filters.shopTypes
-        : (category?.shopTypes || []);
       if (activeTypes.length > 0) q = q.in('shop_type', activeTypes);
-
-      if (query.trim()) q = q.ilike('display_name', `%${query.trim()}%`);
+      if (query.trim())           q = q.ilike('display_name', `%${query.trim()}%`);
       if (filters.minRating > 0)  q = q.gte('avg_rating', filters.minRating);
       if (filters.priceRange > 0) q = q.eq('price_range', filters.priceRange);
 
@@ -319,7 +442,6 @@ export default function SearchPage() {
 
       const { data, count, error } = await q;
       if (error) throw error;
-
       setShops(resetPage ? (data || []) : (prev) => [...prev, ...(data || [])]);
       setTotalCount(count || 0);
     } catch (err) {
@@ -327,17 +449,17 @@ export default function SearchPage() {
     } finally {
       setLoading(false);
     }
-  }, [city, cityInput, citySlug, category, filters, query, sortBy, page]);
+  }, [city, cityInput, category, filters, query, sortBy, page, nearMe, userCoords, radius]);
 
   useEffect(() => {
     fetchShops(true);
     const params = {};
-    if (query)               params.q      = query;
-    if (sortBy !== 'rating_desc') params.sort = sortBy;
+    if (query)                    params.q      = query;
+    if (sortBy !== 'rating_desc') params.sort   = sortBy;
     if (filters.minRating > 0)    params.rating = filters.minRating;
     if (filters.priceRange > 0)   params.price  = filters.priceRange;
     setSearchParams(params, { replace: true });
-  }, [city, category, query, sortBy, filters]);
+  }, [city, category, query, sortBy, filters, nearMe, radius, userCoords, setSearchParams, fetchShops]);
 
   useEffect(() => {
     let title = 'Search Shops – RateMyShop';
@@ -391,18 +513,32 @@ export default function SearchPage() {
           {/* Search bar */}
           <form className="sp-search-bar" onSubmit={handleSearch}>
             <div className="sp-search-bar__field sp-search-bar__city">
-              <MapPin size={15} className="sp-search-bar__icon" />
+              <MapPin size={15} className={`sp-search-bar__icon ${nearMe ? 'sp-search-bar__icon--active' : ''}`} />
               <input
                 type="text"
-                placeholder="City (e.g. Jaipur)"
-                value={cityInput}
+                placeholder={nearMe ? "Using GPS Location" : "City (e.g. Jaipur)"}
+                value={nearMe ? "Current Location" : cityInput}
                 onChange={handleCityInput}
-                onFocus={() => cityInput.length >= 2 && setShowCitySugg(true)}
+                onFocus={() => !nearMe && cityInput.length >= 2 && setShowCitySugg(true)}
                 onBlur={() => setTimeout(() => setShowCitySugg(false), 150)}
-                className="sp-search-bar__input"
+                className={`sp-search-bar__input ${nearMe ? 'sp-search-bar__input--active' : ''}`}
                 aria-label="City"
                 autoComplete="off"
+                disabled={nearMe}
               />
+              <button
+                type="button"
+                className={`sp-search-bar__near-me-btn ${nearMe ? 'sp-search-bar__near-me-btn--active' : ''} ${gpsLoading ? 'sp-search-bar__near-me-btn--loading' : ''}`}
+                onClick={handleNearMeToggle}
+                title="Search near my current location"
+                aria-label="Search near me"
+              >
+                {gpsLoading ? (
+                  <Loader size={13} className="spin" />
+                ) : (
+                  <Navigation size={13} />
+                )}
+              </button>
               <AnimatePresence>
                 {showCitySugg && citySuggestions.length > 0 && (
                   <motion.ul className="sp-city-sug"
@@ -438,6 +574,13 @@ export default function SearchPage() {
             </button>
           </form>
 
+          {gpsError && (
+            <div className="sp-gps-error">
+              <span>{gpsError}</span>
+              <button type="button" onClick={() => setGpsError('')}>×</button>
+            </div>
+          )}
+
           {/* Category chips — icon + label, no emojis */}
           <div className="sp-cat-links">
             {SEO_CATEGORIES.map((cat) => (
@@ -450,6 +593,49 @@ export default function SearchPage() {
                 {cat.label}
               </Link>
             ))}
+          </div>
+
+          {/* Near-me toggle & radius slider */}
+          <div className="sp-nearme">
+            <button
+              className={`sp-nearme__toggle ${nearMe ? 'sp-nearme__toggle--active' : ''}`}
+              onClick={handleNearMeToggle}
+              disabled={gpsLoading}
+              type="button"
+            >
+              {gpsLoading ? (
+                <Loader size={14} className="spin" />
+              ) : (
+                <Navigation size={14} />
+              )}
+              <span>Use my location</span>
+              {gpsError && <span className="sp-nearme__error">{gpsError}</span>}
+            </button>
+
+            {nearMe && userCoords && (
+              <div className="sp-nearme__slider">
+                <span className="sp-nearme__radius-label">
+                  Search within <strong>{radius} km</strong>
+                </span>
+                <input
+                  type="range"
+                  min="0.5" max="10" step="0.5"
+                  value={radius}
+                  onChange={(e) => setRadius(parseFloat(e.target.value))}
+                  className="sp-nearme__range"
+                />
+                <div className="sp-nearme__ticks">
+                  {RADIUS_OPTIONS.map((opt) => (
+                    <span
+                      key={opt.value}
+                      className={`sp-nearme__tick${opt.value === radius ? ' sp-nearme__tick--active' : ''}`}
+                    >
+                      {opt.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -471,6 +657,9 @@ export default function SearchPage() {
               filters={filters}
               onChange={(f) => { setFilters(f); setFiltersOpen(false); }}
               onReset={handleResetFilters}
+              nearMe={nearMe}
+              radius={radius}
+              onChangeRadius={setRadius}
             />
           </div>
 
@@ -497,7 +686,7 @@ export default function SearchPage() {
                       initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: Math.min(i, 5) * 0.05 }}
                     >
-                      <ShopCard shop={shop} />
+                      <ShopCard shop={shop} nearMe={nearMe} userCoords={userCoords} />
                     </motion.div>
                   ))}
                 </AnimatePresence>

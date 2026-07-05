@@ -10,6 +10,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { resolveHash } from '../lib/upiHash';
 import { useAuth } from '../context/AuthContext';
+import { INDIAN_CITIES } from '../data/searchData';
 import StarRating from '../components/StarRating';
 import ReviewCard from '../components/ReviewCard';
 import RatingDistribution from '../components/RatingDistribution';
@@ -35,6 +36,24 @@ export const SHOP_TYPES = [
   { value: 'auto_parts', label: 'Auto Parts / Garage' },
   { value: 'general', label: 'Other' },
 ];
+
+/**
+ * Given a free-text location string (e.g. "Koramangala, Bengaluru" or
+ * "Andheri West, Mumbai, Maharashtra"), find the first matching city
+ * from our canonical list and return { city, state } or null.
+ */
+function extractCityFromLocation(locationText) {
+  if (!locationText) return null;
+  const lower = locationText.toLowerCase();
+  // Sort by name length descending so "Navi Mumbai" matches before "Mumbai"
+  const sorted = [...INDIAN_CITIES].sort((a, b) => b.name.length - a.name.length);
+  for (const c of sorted) {
+    if (lower.includes(c.name.toLowerCase())) {
+      return { city: c.name, state: c.state };
+    }
+  }
+  return null;
+}
 
 function getShopName(upiId) {
   const decoded = decodeURIComponent(upiId);
@@ -197,6 +216,7 @@ export default function ShopReviewPage() {
   const [isEditingShopInfo, setIsEditingShopInfo] = useState(false);
   const [suggestName, setSuggestName] = useState('');
   const [suggestType, setSuggestType] = useState('');
+  const [suggestCity, setSuggestCity] = useState('');
   const [suggestSubmitting, setSuggestSubmitting] = useState(false);
   const [suggestDone, setSuggestDone] = useState(false);
 
@@ -206,6 +226,7 @@ export default function ShopReviewPage() {
   const [postAnonymously, setPostAnonymously] = useState(true);
   const [locationText, setLocationText] = useState('');
   const [locating, setLocating] = useState(false);
+  const [gpsCoords, setGpsCoords] = useState(null); // { lat, lng } — raw GPS for shop upsert
   const [submitting, setSubmitting] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [existingUserReview, setExistingUserReview] = useState(null);
@@ -396,6 +417,8 @@ export default function ShopReviewPage() {
       async (pos) => {
         try {
           const { latitude, longitude } = pos.coords;
+          // Store raw coords for shop upsert (hyperlocal search)
+          setGpsCoords({ lat: latitude, lng: longitude });
           const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
           const data = await res.json();
           const addr = data.address || {};
@@ -403,6 +426,7 @@ export default function ShopReviewPage() {
           setLocationText(parts.join(', ') || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
         } catch {
           const { latitude, longitude } = pos.coords;
+          setGpsCoords({ lat: latitude, lng: longitude });
           setLocationText(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
         }
         setLocating(false);
@@ -415,17 +439,40 @@ export default function ShopReviewPage() {
   /* ── Submit suggestion ──────────────────────────── */
   const handleSuggestSubmit = async (e) => {
     e?.preventDefault();
-    if (!suggestName.trim() && !suggestType) return;
+    if (!suggestName.trim() && !suggestType && !suggestCity) return;
     setSuggestSubmitting(true);
     try {
+      const cityObj = suggestCity
+        ? INDIAN_CITIES.find((c) => c.slug === suggestCity) || null
+        : null;
+
       await supabase.from('shop_suggestions').insert({
         shop_id: decodedUpiId,
         suggested_name: suggestName.trim() || null,
         suggested_type: suggestType || null,
+        suggested_city:  cityObj?.name  || null,
+        suggested_state: cityObj?.state || null,
+        // Include GPS pin if the reviewer has already detected their location
+        suggested_lat: gpsCoords?.lat || null,
+        suggested_lng: gpsCoords?.lng || null,
         votes: 1,
       });
+
       if (suggestName.trim()) setShopDisplayName(suggestName.trim());
       if (suggestType) setShopType(suggestType);
+
+      // Also write city directly to shops so search works immediately
+      if (cityObj || gpsCoords) {
+        await supabase.from('shops').upsert(
+          {
+            upi_id: decodedUpiId,
+            ...(cityObj  ? { city: cityObj.name, state: cityObj.state } : {}),
+            ...(gpsCoords ? { lat: gpsCoords.lat, lng: gpsCoords.lng }  : {}),
+          },
+          { onConflict: 'upi_id' }
+        );
+      }
+
       setIsEditingShopInfo(false);
       setSuggestDone(true);
     } catch (err) {
@@ -441,14 +488,20 @@ export default function ShopReviewPage() {
     setSubmitting(true);
 
     try {
-      // Upsert shop
+      // Upsert shop — include city/state if we can extract it from the reviewer's location
+      const cityInfo = extractCityFromLocation(locationText);
       await supabase.from('shops').upsert(
-        { 
-          upi_id: decodedUpiId, 
+        {
+          upi_id: decodedUpiId,
           display_name: shopDisplayName,
-          name: shopDisplayName, 
+          name: shopDisplayName,
           shop_type: shopType,
-          category: shopType 
+          category: shopType,
+          // Only write city/state if we have a confident match; don't overwrite
+          // existing data with null — handled by Supabase upsert ignoreDuplicates=false
+          ...(cityInfo ? { city: cityInfo.city, state: cityInfo.state } : {}),
+          // Write GPS coords if reviewer detected location — enables hyperlocal search
+          ...(gpsCoords ? { lat: gpsCoords.lat, lng: gpsCoords.lng } : {}),
         },
         { onConflict: 'upi_id' }
       );
@@ -946,15 +999,27 @@ export default function ShopReviewPage() {
                       maxLength={60}
                       autoFocus
                     />
-                    <select
-                      className="shop-type-edit-select"
-                      value={suggestType || shopType}
-                      onChange={(e) => setSuggestType(e.target.value)}
-                    >
-                      {SHOP_TYPES.map((t) => (
-                        <option key={t.value} value={t.value}>{t.label}</option>
-                      ))}
-                    </select>
+                    <div className="shop-edit-row">
+                      <select
+                        className="shop-type-edit-select"
+                        value={suggestType || shopType}
+                        onChange={(e) => setSuggestType(e.target.value)}
+                      >
+                        {SHOP_TYPES.map((t) => (
+                          <option key={t.value} value={t.value}>{t.label}</option>
+                        ))}
+                      </select>
+                      <select
+                        className="shop-type-edit-select"
+                        value={suggestCity}
+                        onChange={(e) => setSuggestCity(e.target.value)}
+                      >
+                        <option value="">City (optional)</option>
+                        {INDIAN_CITIES.map((c) => (
+                          <option key={c.slug} value={c.slug}>{c.name}, {c.state}</option>
+                        ))}
+                      </select>
+                    </div>
                     <div className="shop-name-edit-actions">
                       <button
                         className="edit-save-btn"
@@ -966,7 +1031,7 @@ export default function ShopReviewPage() {
                       </button>
                       <button
                         className="edit-cancel-btn"
-                        onClick={() => { setIsEditingShopInfo(false); setSuggestName(''); setSuggestType(''); }}
+                        onClick={() => { setIsEditingShopInfo(false); setSuggestName(''); setSuggestType(''); setSuggestCity(''); }}
                       >
                         <X size={13} />
                       </button>

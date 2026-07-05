@@ -608,3 +608,327 @@
   .sp-cat-links { gap: 6px; }
   .sp-cat-chip  { font-size: 0.76rem; padding: 5px 10px; }
 }
+
+/* ── GPS and Hyperlocal Search Additions ─────────────────────────────── */
+.sp-search-bar__near-me-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  transition: background-color 0.2s, color 0.2s, transform 0.15s;
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
+.sp-search-bar__near-me-btn:hover {
+  background-color: rgba(255, 107, 43, 0.08);
+  color: var(--saffron);
+  transform: scale(1.08);
+}
+
+.sp-search-bar__near-me-btn--active {
+  background-color: rgba(0, 137, 123, 0.08);
+  border: 1px solid rgba(0, 137, 123, 0.2);
+  color: var(--teal) !important;
+}
+
+.sp-search-bar__near-me-btn--active:hover {
+  background-color: rgba(0, 137, 123, 0.14);
+}
+
+.sp-search-bar__near-me-btn--loading svg {
+  animation: spin 1s linear infinite;
+}
+
+.sp-search-bar__icon--active {
+  color: var(--teal) !important;
+}
+
+.sp-search-bar__input--active {
+  color: var(--teal) !important;
+  font-weight: 600;
+}
+
+/* GPS Error banner */
+.sp-gps-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: rgba(198, 40, 40, 0.05);
+  border: 1.5px solid rgba(198, 40, 40, 0.15);
+  border-radius: 12px;
+  padding: 10px 16px;
+  margin-top: 14px;
+  max-width: 580px;
+  margin-left: auto;
+  margin-right: auto;
+  font-size: 0.85rem;
+  color: var(--deep-red);
+}
+
+.sp-gps-error button {
+  background: none;
+  border: none;
+  color: var(--deep-red);
+  font-size: 1.15rem;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 4px;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.sp-gps-error button:hover {
+  opacity: 1;
+}
+
+/* Radius select dropdown in FilterPanel */
+.sp-filters__radius-select-wrap {
+  width: 100%;
+  margin-top: 6px;
+}
+
+.sp-filters__select {
+  width: 100%;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem;
+  color: var(--text-h);
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.sp-filters__select:focus {
+  border-color: var(--saffron);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Near-me Section Styling */
+.sp-nearme {
+  background: #ffffff;
+  border: 1.5px solid rgba(0, 0, 0, 0.05);
+  border-radius: 20px;
+  padding: 20px 24px;
+  margin-top: 24px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.sp-nearme__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sp-nearme__toggle:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #334155;
+  transform: translateY(-1px);
+}
+
+.sp-nearme__toggle--active {
+  background: rgba(0, 137, 123, 0.06);
+  border-color: var(--teal);
+  color: var(--teal) !important;
+  box-shadow: 0 4px 12px rgba(0, 137, 123, 0.1);
+}
+
+.sp-nearme__toggle--active:hover {
+  background: rgba(0, 137, 123, 0.1);
+  border-color: var(--teal);
+}
+
+.sp-nearme__error {
+  margin-left: 8px;
+  font-size: 0.8rem;
+  color: var(--deep-red);
+  font-weight: 500;
+}
+
+/* Slider */
+.sp-nearme__slider {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 580px;
+  padding: 4px 0;
+}
+
+.sp-nearme__radius-label {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.sp-nearme__radius-label strong {
+  color: var(--saffron);
+  font-weight: 800;
+}
+
+/* Range input styling */
+.sp-nearme__range {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: #e2e8f0;
+  outline: none;
+  margin: 12px 0 6px;
+}
+
+/* Webkit browser thumb */
+.sp-nearme__range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--saffron);
+  border: 2.5px solid #fff;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(255, 107, 43, 0.3);
+  transition: transform 0.15s, background-color 0.15s;
+}
+
+.sp-nearme__range::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  background: var(--deep-red);
+}
+
+/* Firefox browser thumb */
+.sp-nearme__range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--saffron);
+  border: 2.5px solid #fff;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(255, 107, 43, 0.3);
+  transition: transform 0.15s, background-color 0.15s;
+}
+
+.sp-nearme__range::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  background: var(--deep-red);
+}
+
+.sp-nearme__ticks {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 4px;
+}
+
+.sp-nearme__tick {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s, font-weight 0.15s;
+}
+
+.sp-nearme__tick--active {
+  color: var(--saffron);
+  font-weight: 800;
+}
+
+/* Enhanced City Autocomplete Dropdown */
+.sp-city-sug {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  min-width: 260px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1.5px solid rgba(255, 107, 43, 0.12);
+  border-top: 3px solid var(--saffron);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+  list-style: none;
+  margin: 0;
+  padding: 8px 0;
+  z-index: 200;
+  overflow: hidden;
+}
+
+.sp-city-sug::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  left: 24px;
+  border-width: 0 7px 7px 7px;
+  border-style: solid;
+  border-color: transparent transparent var(--saffron) transparent;
+  display: block;
+  width: 0;
+}
+
+.sp-city-sug li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.sp-city-sug li:hover {
+  background-color: rgba(255, 107, 43, 0.05);
+  color: var(--saffron);
+}
+
+.sp-city-sug li svg {
+  color: var(--saffron);
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+
+.sp-city-sug li:hover svg {
+  transform: scale(1.15);
+}
+
+.sp-city-sug__state {
+  margin-left: auto;
+  font-size: 0.74rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+

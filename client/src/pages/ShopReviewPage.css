@@ -1144,7 +1144,15 @@
 .shop-name-edit-input::placeholder { color: #CBD5E1; }
 .shop-name-edit-input:focus { border-bottom-color: var(--deep-red); }
 
+.shop-edit-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
 .shop-type-edit-select {
+  flex: 1;
+  min-width: 0;
   font-family: 'Outfit', sans-serif;
   font-size: 0.85rem;
   font-weight: 600;
